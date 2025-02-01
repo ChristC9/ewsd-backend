@@ -6,5 +6,5 @@ from app.api.routes import (
 )
 
 api_router = APIRouter()
-api_router.include_router(user_management.router, prefix="/users", tags=["user"])
-api_router.include_router(user_management.token_router, prefix="/token", tags=["token"])
+api_router.include_router(user_management.router, prefix="/users", tags=["User Management"])
+api_router.include_router(user_management.token_router, prefix="/token", tags=["Token Management"])
