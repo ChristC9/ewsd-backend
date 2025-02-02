@@ -1,12 +1,9 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 
+from app.models.base import CommonBase
 
-Base = declarative_base()
-
-
-class User(Base):
+class User(CommonBase):
 
     __tablename__ = "users"
 
@@ -17,8 +14,7 @@ class User(Base):
     username: str = Column(String(50), unique=True)
     password: str = Column(String(255))
     role: str = Column(String(50))
-    created_at: datetime = Column(DateTime, default=datetime.now)
-    updated_at: datetime = Column(DateTime, default=datetime.now)
+  
 
     def __repr__(self):
         return f"<User {self.username}>"

@@ -1,17 +1,29 @@
-from fastapi import FastAPI, status, APIRouter
-from .schema.schema import UserResponse,Token,RefreshToken
-from .views.user_views import create_user, read_user, read_all_users,login, refresh_token, get_current_user_info
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
+from starlette.middleware.cors import CORSMiddleware
 
-app = FastAPI()
-
-router = APIRouter()
-
-router.add_api_route("/api/users",endpoint=create_user, methods=["POST"], response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-router.add_api_route("/api/users/{user_id}",endpoint=read_user, methods=["GET"], response_model=UserResponse)
-router.add_api_route("/api/users",endpoint=read_all_users, methods=["GET"])
-router.add_api_route("/api/user/login", endpoint=login, methods=["POST"], response_model=Token)
-router.add_api_route("/api/token/refresh", endpoint= refresh_token, methods=["POST"], response_model=RefreshToken)
-router.add_api_route("/api/user/me", endpoint= get_current_user_info, methods=["GET"], response_model=UserResponse)
+from app.api.main import api_router
+from app.config import settings
 
 
-app.router.include_router(router)
+def custom_generate_unique_id(route: APIRoute) -> str:
+    return f"{route.tags[0]}-{route.name}"
+
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_STR}/openapi.json",
+    generate_unique_id_function=custom_generate_unique_id,
+)
+
+# Set all CORS enabled origins
+# if settings.all_cors_origins:
+#     app.add_middleware(
+#         CORSMiddleware,
+#         allow_origins=settings.all_cors_origins,
+#         allow_credentials=True,
+#         allow_methods=["*"],
+#         allow_headers=["*"],
+#     )
+
+app.include_router(api_router, prefix=settings.API_STR)
