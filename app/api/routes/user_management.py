@@ -1,7 +1,9 @@
+from ast import For
 from time import sleep
 import time
 from unittest import result
 from fastapi import Depends, HTTPException, APIRouter, status
+from fastapi import security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,15 +11,22 @@ from sqlalchemy import select
 
 from jose import jwt, JWTError
 from typing import Annotated, Optional
+from datetime import datetime, timezone, timedelta
 
 from app.api.deps import CurrentUser, OptionalCurrentUser
+from app.models.security import Otp
 from app.schema.schema import UserCreate, UserLogin, Token, RefreshToken, UserResponse
+from app.schema.security import ForgetPasswordInitiateRequest, ResetPasswordRequest, OtpCreate, OtpUpdate
 from app.models.user_model import User as UserModel
-from app.repositories import users as user_repo
+from app.repositories import (
+    users as user_repo,
+    security as security_repo
+)
 from app.auth.authentication import (
     authenticate_user,
 )
 from app.utils.tokens import get_access_token, get_refresh_token
+from app.utils.helpers import generate_otp_code
 from app.config import settings
 from app.database import get_db
 
@@ -35,7 +44,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
-    user = await user_repo.get_user(db, user_id)
+    user = await user_repo.get_user(db, user_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -113,3 +122,62 @@ async def refresh_token(
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: CurrentUser):
     return current_user
+
+
+@router.post("/forget-password/initiate")
+async def initiate_password_reset(
+    initiateRequest: ForgetPasswordInitiateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    # get user
+    user = await user_repo.get_user(db, email=initiateRequest.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # generate otp
+    otp_code = generate_otp_code(length=6)
+    expire_at = datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
+
+    # save otp to db
+    otp_data_object = await security_repo.get_otp(db, user.id, is_used=False)
+    if otp_data_object:
+        otpUpdate = OtpUpdate(otp=otp_code, expires_at=expire_at, is_used=False)
+        otp = await security_repo.update_otp_by_model(db, otpUpdate, otp_data_object)
+    else:
+        otpCreate = OtpCreate(user_id=user.id, otp=otp_code, expires_at=expire_at)
+        otp = await security_repo.create_otp(db, otpCreate)
+    
+    # send otp to user
+    # TODO: send otp to user
+    print(otp.otp)
+    return {"detail": f"OTP sent successfully to {initiateRequest.email}"}
+
+
+@router.post("/forget-password/reset")
+async def reset_password(
+    resetRequest: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    # get user
+    user = await user_repo.get_user(db, email=resetRequest.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_id = user.id
+    
+    # get otp
+    otp_data_object = await security_repo.get_otp(db, user.id, is_used=False)
+    if not otp_data_object:
+        raise HTTPException(status_code=404, detail="OTP not found")
+    
+    # validate otp
+    if otp_data_object.otp != resetRequest.otp_code:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    # update password
+    await user_repo.update_user_password(db, user_id, resetRequest.new_password)
+    # mark otp as used
+    otpUpdate = OtpUpdate(is_used=True)
+    await security_repo.update_otp_by_model(db, otpUpdate, otp_data_object)
+    
+    return {"detail": "Password reset successfully."}

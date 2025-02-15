@@ -9,3 +9,8 @@ def verify_password(plain_pw: str, hashed_pw: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
+
+def generate_otp_code(length=6) -> str:
+    import random
+    return ''.join([str(random.randint(0, 9)) for _ in range(length)])

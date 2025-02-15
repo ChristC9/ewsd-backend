@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     DB_PORT : int
     SERVER_HOST : str
     SERVER_PORT : int
+    OTP_EXPIRE_MINUTES : int
 
     
     @property
