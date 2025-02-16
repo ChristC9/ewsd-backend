@@ -75,4 +75,5 @@ async def update_user_password(db: AsyncSession, user_id: int, password: str) ->
     except Exception as e:
         await db.rollback()
         tb_str = traceback.format_exc()
+        print(tb_str)
         raise HTTPException(status_code=400, detail="DB error occurred")

@@ -1,19 +1,18 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 
-from app.api.routes import user_management
-from app.models.base import CommonBase
+from app.models.base import CommonBase, Base
 from app.models.user_model import User
 
-class Otp(CommonBase):
+class Otp(Base):
 
-    __tablename__ = "otp"
+    __tablename__ = "tbluserotp"
 
-    id: int = Column(Integer, primary_key=True)
-    user_id: int = Column(Integer, nullable=False)
-    otp: str = Column(String(6))
-    is_used: bool = Column(Boolean, default=False)
-    expires_at: datetime = Column(DateTime)
+    colotpid = Column(Integer, primary_key=True)
+    coluserid = Column(Integer, nullable=False)
+    colotp = Column(String(6))
+    colisused = Column(Boolean, default=False)
+    colexpiresat = Column(DateTime(timezone=True))
 
     def __repr__(self):
-        return f"<Otp {self.otp}>"
+        return f"<Otp {self.colotp}>"

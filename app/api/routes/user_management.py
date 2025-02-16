@@ -26,7 +26,7 @@ from app.auth.authentication import (
     authenticate_user,
 )
 from app.utils.tokens import get_access_token, get_refresh_token
-from app.utils.helpers import generate_otp_code
+from app.utils.helpers import generate_otp_code, send_otp_email
 from app.config import settings
 from app.database import get_db
 
@@ -149,7 +149,8 @@ async def initiate_password_reset(
     
     # send otp to user
     # TODO: send otp to user
-    print(otp.otp)
+    send_otp_email(to_email=initiateRequest.email, otp_code=otp_code)
+    print(otp.colotp)
     return {"detail": f"OTP sent successfully to {initiateRequest.email}"}
 
 
@@ -171,13 +172,14 @@ async def reset_password(
         raise HTTPException(status_code=404, detail="OTP not found")
     
     # validate otp
-    if otp_data_object.otp != resetRequest.otp_code:
+    if otp_data_object.colotp != resetRequest.otp_code:
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
-    # update password
-    await user_repo.update_user_password(db, user_id, resetRequest.new_password)
     # mark otp as used
     otpUpdate = OtpUpdate(is_used=True)
     await security_repo.update_otp_by_model(db, otpUpdate, otp_data_object)
+
+    # update password
+    await user_repo.update_user_password(db, user_id, resetRequest.new_password)
     
     return {"detail": "Password reset successfully."}
