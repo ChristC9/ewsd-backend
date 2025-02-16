@@ -33,3 +33,12 @@ class UserLogin(BaseModel):
 
 class RefreshToken(BaseModel):
     refresh_token: str
+
+
+class RoleBase(BaseModel):
+
+    id: int
+    name: str
+    created_by: UserBase
+    created_at: datetime
+    updated_at: datetime
