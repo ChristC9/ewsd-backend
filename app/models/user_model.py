@@ -10,7 +10,7 @@ class User(CommonBase):
     id: int = Column(Integer, primary_key=True)
     firstname: str = Column(String(50))
     lastname: str = Column(String(50))
-    email: str = Column(String(100),nullable=True)
+    email: str = Column(String(100),nullable=True, unique=True)
     username: str = Column(String(50), unique=True)
     password: str = Column(String(255))
     role: str = Column(String(50))
