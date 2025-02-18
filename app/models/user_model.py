@@ -2,7 +2,6 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import CommonBase
-from app.models.department_model import Department
 
 # class User(CommonBase):
 

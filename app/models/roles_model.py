@@ -1,7 +1,6 @@
 from app.models.base import CommonBase
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from app.models.user_model import User
 from sqlalchemy.orm import relationship
 
 class Role(CommonBase):
