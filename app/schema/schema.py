@@ -3,24 +3,17 @@ from datetime import datetime
 from typing import Optional
 
 class UserBase(BaseModel):
+
     firstname: str
     lastname: str
     email: Optional[str] = None
     username: str
+    default_password: str
+    pasword: str
 
     class Config:
         orm_mode = True
 
-class UserCreate(UserBase):
-    password: str
-    role: str
-
-class UserResponse(UserBase):
-    id: int
-    # password: str
-    role: str
-    created_at: datetime
-    updated_at: datetime
 
 class Token(BaseModel):
     access_token: str
@@ -37,8 +30,40 @@ class RefreshToken(BaseModel):
 
 class RoleBase(BaseModel):
 
+    name: str
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class RoleCreate(BaseModel):
+    name: str
+    created_by: str
+
+class UserCreate(UserBase):
+    role_id: int
+    department_id: int
+
+class DepartmentBase(BaseModel):
+    
     id: int
     name: str
-    created_by: UserBase
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class DepartmentCreate(BaseModel):
+    name: str
+    created_by: str
+class UserResponse(UserBase):
+
+    id: int
+    role: RoleBase
+    department: DepartmentBase
     created_at: datetime
     updated_at: datetime

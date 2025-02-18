@@ -1,5 +1,5 @@
 from fastapi import APIRouter,status,Depends
-from app.schema.schema import RoleBase
+from app.schema.schema import RoleBase,RoleCreate
 from sqlalchemy.orm import Session
 from app.database import get_db
 from ..deps import get_current_user
@@ -11,11 +11,10 @@ router = APIRouter()
 
 
 @router.post('/',response_model=RoleBase, status_code=status.HTTP_201_CREATED)
-@has_permission(Permissions.CREATE_ROLE)
-async def create_role(role:RoleBase, db: Session = Depends(get_db),current_user = Depends(get_current_user)):
+async def create_role(role:RoleCreate, db: Session = Depends(get_db)):
     
     role_repo = RoleRepository(db)
-    return role_repo.create_role(role, current_user.id)
+    return await role_repo.create_role(role)
 
 @router.get('/',response_model=list[RoleBase],status_code=status.HTTP_200_OK)
 @has_permission(Permissions.READ_ROLE)

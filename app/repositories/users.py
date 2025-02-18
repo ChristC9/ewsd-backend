@@ -46,6 +46,7 @@ class UserRepository:
                 username=user.username,
                 password=hashed_password,
                 email= user.email if user.email else None,
+                department_id=user.department_id,
                 role=user.role,
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc)

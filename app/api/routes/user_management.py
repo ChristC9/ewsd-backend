@@ -29,7 +29,6 @@ router = APIRouter()
 token_router = APIRouter()
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-@has_permission(Permissions.CREATE_USER)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
     db_user =  await user_repo.create_user(user)

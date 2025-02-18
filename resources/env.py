@@ -7,6 +7,9 @@ from alembic import context
 from app.config import settings
 from app.models.base import Base, CommonBase
 from app.models.user_model import *
+from app.models.roles_model import *
+from app.models.department_model import *
+
 
 # Interpret the config file for Python logging.
 config = context.config

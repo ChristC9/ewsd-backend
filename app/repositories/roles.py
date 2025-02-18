@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime,timezone
 from app.models.roles_model import Role
-from app.schema.schema import RoleBase
+from app.schema.schema import RoleBase, RoleCreate
 from fastapi import HTTPException, status
 from typing import List
 
@@ -10,21 +10,23 @@ class RoleRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    async def create_role(self, role: RoleBase, user_id: int) -> Role:
+    async def create_role(self, role: RoleCreate) -> Role:
 
         try:
             new_role = Role(
                 name = role.name,
-                created_by = user_id,
+                created_by = role.created_by,
                 created_at = datetime.now(timezone.utc),
                 updated_at = datetime.now(timezone.utc)
             )
+            print(new_role)
             self.db.add(new_role)
             await self.db.commit()
             await self.db.refresh(new_role)
             return new_role
         except Exception as e:
             self.db.rollback()
+            print("Role Creation Error is " + str(e))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error creating role")
     
     async def get_role(self) -> List[Role]:
