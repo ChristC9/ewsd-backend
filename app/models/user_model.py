@@ -38,3 +38,4 @@ class User(CommonBase):
 
     role = relationship("Role", lazy="selectin")
     department = relationship("Department", lazy="selectin")
+
