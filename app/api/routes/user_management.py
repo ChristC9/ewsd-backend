@@ -18,6 +18,7 @@ from app.models.security import Otp
 from app.schema.schema import UserCreate, UserLogin, Token, RefreshToken, UserResponse
 from app.schema.security import ForgetPasswordInitiateRequest, ResetPasswordRequest, OtpCreate, OtpUpdate
 from app.models.user_model import User as UserModel
+from app.repositories.users import UserRepository
 from app.repositories import (
     users as user_repo,
     security as security_repo
@@ -29,6 +30,7 @@ from app.utils.tokens import get_access_token, get_refresh_token
 from app.utils.helpers import generate_otp_code, send_otp_email
 from app.config import settings
 from app.database import get_db
+from app.auth.permissions import has_permission, Permissions
 
 secret_key = settings.SECRET_KEY
 algorithm = settings.ALGORITHM
@@ -38,20 +40,26 @@ token_router = APIRouter()
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    db_user = await user_repo.create_user(db, user)
+    user_repo = UserRepository(db)
+    db_user =  await user_repo.create_user(user)
     return db_user
 
 
 @router.get("/{user_id}", response_model=UserResponse)
+@has_permission(Permissions.READ_USER)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
-    user = await user_repo.get_user(db, user_id=user_id)
+
+    user_repo = UserRepository(db)
+    user = await user_repo.get_user(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
 @router.get("/", response_model=list[UserResponse])
+@has_permission(Permissions.READ_USER)
 async def read_all_users(db: AsyncSession = Depends(get_db)):
+    user_repo = UserRepository(db)
     db_users = await user_repo.get_all_users(db)
     return db_users
 
@@ -60,7 +68,6 @@ async def read_all_users(db: AsyncSession = Depends(get_db)):
 # async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
 async def login(credentials: Annotated[OAuth2PasswordRequestForm, Depends()], db: AsyncSession = Depends(get_db)):
     user = await authenticate_user(db, credentials.username, credentials.password)
-    print(user)
     if not user:
         raise HTTPException(
             status_code=401, 
@@ -94,6 +101,7 @@ async def refresh_token(
             )
             
         username = payload.get("sub")
+        user_repo = UserRepository(db)
         user = await user_repo.get_user(db, username=username)
         
         if not user:
@@ -123,6 +131,21 @@ async def refresh_token(
 async def get_current_user_info(current_user: CurrentUser):
     return current_user
 
+
+
+@router.patch("/{user_id}", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def update_user(user_id: int, user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+    user_repo = UserRepository(db)
+    user = await user_repo.update_user(db, user_id, user_data)
+    return user
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@has_permission(Permissions.DELETE_USER)
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    user_repo = UserRepository(db)
+    deleted_user = await user_repo.delete_user(db, user_id)
+    return deleted_user
 
 @router.post("/forget-password/initiate")
 async def initiate_password_reset(
@@ -183,3 +206,4 @@ async def reset_password(
     await user_repo.update_user_password(db, user_id, resetRequest.new_password)
     
     return {"detail": "Password reset successfully."}
+

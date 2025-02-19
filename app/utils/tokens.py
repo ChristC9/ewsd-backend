@@ -13,7 +13,7 @@ def get_access_token(user: User):
         data = {
             "sub": user.username, 
             "email": user.email,
-            "role": user.role,
+            "role": user.role.name,
             "type": "access"
         },
         expires_delta = access_token_expires
