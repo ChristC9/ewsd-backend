@@ -8,4 +8,4 @@ class Department(CommonBase):
     
     id: int = Column(Integer, primary_key=True, index=True)
     name: str = Column(String, unique=True, index=True)
-    users = relationship("User", backref="department")
+    # users = relationship("User", backref="department")

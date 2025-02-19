@@ -16,4 +16,4 @@ class Role(CommonBase):
 
     id: int = Column(Integer, primary_key=True)
     name: str = Column(String(50), unique=True)
-    users = relationship("User", backref="role")
+    # users = relationship("User", backref="role")

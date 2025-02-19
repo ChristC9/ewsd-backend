@@ -8,8 +8,8 @@ class UserBase(BaseModel):
     lastname: str
     email: Optional[str] = None
     username: str
-    default_password: str
-    pasword: str
+    default_pwd: str
+    password: str
 
     class Config:
         orm_mode = True
@@ -60,10 +60,27 @@ class DepartmentBase(BaseModel):
 class DepartmentCreate(BaseModel):
     name: str
     created_by: str
+
+class RoleResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+class DepartmentResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
 class UserResponse(UserBase):
 
     id: int
-    role: RoleBase
-    department: DepartmentBase
+    role: RoleResponse
+    department: DepartmentResponse
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True

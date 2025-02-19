@@ -27,6 +27,6 @@ class DepartmentRepository:
             await self.db.refresh(new_department)
             return new_department
         except Exception as e:
-            self.db.rollback()
+            await self.db.rollback()
             print("Department Creation Error is " + str(e))        
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error creating department")

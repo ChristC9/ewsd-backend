@@ -8,14 +8,15 @@ from datetime import datetime, timedelta, timezone
 from ..utils.helpers import verify_password
 from jose import jwt
 from ..config import settings
-from app.repositories import users as user_repo
+from app.repositories.users import UserRepository
 
 secret_key = settings.SECRET_KEY
 algorithm = settings.ALGORITHM
 
 
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
-    user = await user_repo.get_user(db, username=username)
+    user_repo = UserRepository(db)
+    user = await user_repo.get_user(username=username)
     if not user or not verify_password(password, user.password):
         return None
     return user

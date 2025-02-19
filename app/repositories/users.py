@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException,status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError
@@ -18,7 +18,7 @@ class UserRepository:
 
         
 
-    async def get_user(db: AsyncSession, *, username: str = None, user_id: int = None) -> User:
+    async def get_user(self, *, username: str = None, user_id: int = None) -> User:
         if username is not None:
             query = select(User).where(User.username == username)
         elif user_id is not None:
@@ -26,66 +26,62 @@ class UserRepository:
         else:
             raise ValueError("Either username or user_id must be provided")
 
-        result = await db.execute(query)
+        result = await self.db.execute(query)
         user = result.unique().scalar_one_or_none()
         return user
 
 
-    async def get_all_users(db: AsyncSession) -> list[User]:
-        result = await db.execute(select(User))
+    async def get_all_users(self) -> list[User]:
+        result = await self.db.execute(select(User))
         users = result.scalars().all()
         return users
 
 
-    async def create_user(db: AsyncSession, user: UserCreate) -> User:
+    async def create_user(self, user: UserCreate) -> User:
         try:
             hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            default_hashed_password = bcrypt.hashpw(user.default_pwd.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             db_user = User(
                 firstname=user.firstname,
                 lastname=user.lastname,
                 username=user.username,
+                default_pwd = default_hashed_password,
                 password=hashed_password,
                 email= user.email if user.email else None,
                 department_id=user.department_id,
-                role=user.role,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                role_id=user.role_id
             )
-            db.add(db_user)
-            await db.commit()
-            await db.refresh(db_user)
-        except IntegrityError as e:
-            await db.rollback()
-            tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail="Username already exists")
-        except SQLAlchemyError as e:
-            await db.rollback()
-            tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail="DB error occurred")
+            print(db_user)
+
+            self.db.add(db_user)
+            await self.db.commit()
+            await self.db.refresh(db_user)
+            await self.db.refresh(db_user, ['role', 'department'])
+            return db_user
         except Exception as e:
-            await db.rollback()
-            tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail=tb_str)
+            await self.db.rollback()
+            print("User Creation Error is " + str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error creating user")
     
-    async def update_user(self,db: AsyncSession, user_id: int, user_data: UserCreate) -> User:
+    async def update_user(self, user_id: int, user_data: UserCreate) -> User:
         try:
-            user = await self.get_user(db, user_id=user_id)
+            user = await self.get_user(user_id=user_id)
             for k, v in user_data.model_dump(exclude_unset=True).items():
                 setattr(user, k, v)
             user.updated_at = datetime.now(timezone.utc)
-            await db.commit()
-            await db.refresh(user)
+            await self.db.commit()
+            await self.db.refresh(user)
             return user
         except OperationalError as e:
-            await db.rollback()
+            await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail="DB error occurred")
         except SQLAlchemyError as e:
-            await db.rollback()
+            await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail="DB error occurred")
         except Exception as e:
-            await db.rollback()
+            await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)
 
@@ -93,10 +89,10 @@ class UserRepository:
 
         try:
             user_to_delete = await self.get_user(db, user_id=user_id)
-            await db.delete(user_to_delete)
-            await db.commit()
+            await self.db.delete(user_to_delete)
+            await self.db.commit()
             return True
         except:
-            await db.rollback()
+            await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)

@@ -33,5 +33,8 @@ class User(CommonBase):
     default_pwd = Column(String(255))
     password = Column(String(255))
     role_id = Column(Integer, ForeignKey('roles.id'))
-    department_id = Column(Integer, ForeignKey('departments.id'), unique=True)   
-   
+    department_id = Column(Integer, ForeignKey('departments.id'))
+
+
+    role = relationship("Role", lazy="selectin")
+    department = relationship("Department", lazy="selectin")
