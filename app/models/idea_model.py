@@ -17,7 +17,7 @@ class Idea(CommonBase):
     colispostedanon = Column(Boolean, default=False, nullable=False)
     colisactived = Column(Boolean, default=True, nullable=False)
 
-    user = relationship("User", back_populates="ideas", lazy="selectin")
+    user = relationship("User", lazy="selectin")
     files = relationship("File", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
     comments = relationship("Comment", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
     likes = relationship("Like", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")

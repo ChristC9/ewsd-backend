@@ -38,5 +38,4 @@ class User(CommonBase):
 
     role = relationship("Role", lazy="selectin")
     department = relationship("Department", lazy="selectin")
-    ideas = relationship("Idea", back_populates="user", lazy="selectin")
 
