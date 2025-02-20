@@ -38,7 +38,7 @@ router = APIRouter()
 token_router = APIRouter()
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
+async def create_user(user: UserCreate, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
     db_user =  await user_repo.create_user(user)
     return db_user
@@ -49,7 +49,7 @@ async def get_current_user_info(current_user: CurrentUser):
 
 @router.get("/{user_id}", response_model=UserResponse)
 @has_permission(Permissions.READ_USER)
-async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def read_user(current_user: CurrentUser, user_id: int, db: AsyncSession = Depends(get_db)):
 
     user_repo = UserRepository(db)
     user = await user_repo.get_user(db, user_id)
@@ -60,7 +60,7 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/", response_model=list[UserResponse])
 @has_permission(Permissions.READ_USER)
-async def read_all_users(db: AsyncSession = Depends(get_db)):
+async def read_all_users(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
     db_users = await user_repo.get_all_users(db)
     return db_users
@@ -131,14 +131,14 @@ async def refresh_token(
 
 @router.patch("/{user_id}", response_model=UserResponse)
 @has_permission(Permissions.UPDATE_USER)
-async def update_user(user_id: int, user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+async def update_user(user_id: int, user_data: UserCreate, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
     user = await user_repo.update_user(db, user_id, user_data)
     return user
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 @has_permission(Permissions.DELETE_USER)
-async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_user(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
     deleted_user = await user_repo.delete_user(db, user_id)
     return deleted_user
