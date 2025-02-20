@@ -2,7 +2,7 @@ from fastapi import APIRouter,status,Depends
 from app.schema.schema import RoleBase,RoleCreate
 from sqlalchemy.orm import Session
 from app.database import get_db
-from ..deps import get_current_user
+from ..deps import CurrentUser, get_current_user
 from app.repositories.roles import RoleRepository
 from app.auth.permissions import Permissions, has_permission
 
@@ -18,10 +18,11 @@ async def create_role(role:RoleCreate, db: Session = Depends(get_db)):
 
 @router.get('/',response_model=list[RoleBase],status_code=status.HTTP_200_OK)
 @has_permission(Permissions.READ_ROLE)
-async def get_roles(db: Session = Depends(get_db)):
+async def get_roles(current_user: CurrentUser, db: Session = Depends(get_db)):
     
     role_repo = RoleRepository(db)
-    return role_repo.get_role()
+    result = await role_repo.get_role()
+    return result
 
 @router.get('/{role_id}',response_model=RoleBase,status_code=status.HTTP_200_OK)
 @has_permission(Permissions.READ_ROLE)

@@ -43,6 +43,9 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     db_user =  await user_repo.create_user(user)
     return db_user
 
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(current_user: CurrentUser):
+    return current_user
 
 @router.get("/{user_id}", response_model=UserResponse)
 @has_permission(Permissions.READ_USER)
@@ -125,12 +128,6 @@ async def refresh_token(
             detail="Invalid refresh token",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    
-@router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: CurrentUser):
-    return current_user
-
-
 
 @router.patch("/{user_id}", response_model=UserResponse)
 @has_permission(Permissions.UPDATE_USER)

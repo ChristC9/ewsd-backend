@@ -3,7 +3,6 @@ from typing import List
 from fastapi import HTTPException, status
 from functools import wraps
 
-
 class Permissions(str, Enum):
 
     CREATE_DEPARTMENT = "create_department"
