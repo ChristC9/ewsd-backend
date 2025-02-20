@@ -1,6 +1,6 @@
 from fastapi import HTTPException,status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError
 from sqlalchemy.orm import Session
 import bcrypt
@@ -18,11 +18,13 @@ class UserRepository:
 
         
 
-    async def get_user(self, *, username: str = None, user_id: int = None) -> User:
+    async def get_user(self, *, username: str = None, user_id: int = None, email: str = None) -> User:
         if username is not None:
             query = select(User).where(User.username == username)
         elif user_id is not None:
             query = select(User).where(User.id == user_id)
+        elif email is not None:
+            query = select(User).where(User.email == email)
         else:
             raise ValueError("Either username or user_id must be provided")
 
@@ -84,6 +86,17 @@ class UserRepository:
             await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)
+
+    async def update_user_password(self, user_id: int, password: str) -> User:
+        try:
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            query = update(User).where(User.id == user_id).values(password=hashed_password)
+            await self.db.execute(query)
+            await self.db.commit()
+        except Exception as e:
+            await self.db.rollback()
+            tb_str = traceback.format_exc()
+            raise HTTPException(status_code=400, detail="DB error occurred")
 
     async def delete_user(self,db:AsyncSession, user_id:int) -> bool:
 

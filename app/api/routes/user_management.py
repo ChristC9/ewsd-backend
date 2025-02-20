@@ -20,7 +20,6 @@ from app.schema.security import ForgetPasswordInitiateRequest, ResetPasswordRequ
 from app.models.user_model import User as UserModel
 from app.repositories.users import UserRepository
 from app.repositories import (
-    users as user_repo,
     security as security_repo
 )
 from app.auth.authentication import (
@@ -152,8 +151,9 @@ async def initiate_password_reset(
     initiateRequest: ForgetPasswordInitiateRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    user_repo = UserRepository(db)
     # get user
-    user = await user_repo.get_user(db, email=initiateRequest.email)
+    user = await user_repo.get_user(email=initiateRequest.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -173,7 +173,6 @@ async def initiate_password_reset(
     # send otp to user
     # TODO: send otp to user
     send_otp_email(to_email=initiateRequest.email, otp_code=otp_code)
-    print(otp.colotp)
     return {"detail": f"OTP sent successfully to {initiateRequest.email}"}
 
 
@@ -183,7 +182,8 @@ async def reset_password(
     db: AsyncSession = Depends(get_db),
 ):
     # get user
-    user = await user_repo.get_user(db, email=resetRequest.email)
+    user_repo = UserRepository(db)
+    user = await user_repo.get_user(email=resetRequest.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -203,7 +203,7 @@ async def reset_password(
     await security_repo.update_otp_by_model(db, otpUpdate, otp_data_object)
 
     # update password
-    await user_repo.update_user_password(db, user_id, resetRequest.new_password)
+    await user_repo.update_user_password(user_id, resetRequest.new_password)
     
     return {"detail": "Password reset successfully."}
 

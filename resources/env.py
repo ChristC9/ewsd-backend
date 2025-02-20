@@ -9,6 +9,7 @@ from app.models.base import Base, CommonBase
 from app.models.user_model import *
 from app.models.roles_model import *
 from app.models.department_model import *
+from app.models.security import *
 
 
 # Interpret the config file for Python logging.
