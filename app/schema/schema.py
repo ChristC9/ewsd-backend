@@ -1,6 +1,6 @@
-from pydantic import BaseModel
-from datetime import datetime
-from typing import Optional
+from pydantic import BaseModel, UUID4
+from datetime import datetime, date
+from typing import Optional, List
 
 class UserBase(BaseModel):
 
@@ -85,3 +85,106 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
+
+class CommentBase(BaseModel):
+    comment: str
+    ispostedanon: bool = False
+
+class LikeBase(BaseModel):
+    isliked: bool = True
+
+class FileBase(BaseModel):
+    filename: str
+    filetype: str
+
+# Create request schemas
+class CommentCreate(CommentBase):
+    pass
+
+class LikeCreate(LikeBase):
+    pass
+
+class FileCreate(FileBase):
+    pass
+
+# Response schemas
+class UserBasic(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True
+
+class CommentResponse(CommentBase):
+    id: int
+    commentuid: UUID4
+    ideaid: int
+    postedby: int
+    postedon: date
+    user: Optional[UserBasic]
+
+    class Config:
+        from_attributes = True
+
+class LikeResponse(LikeBase):
+    id: int
+    likeuid: UUID4
+    ideaid: int
+    postedby: int
+    postedon: date
+    user: Optional[UserBasic]
+
+    class Config:
+        from_attributes = True
+
+class FileResponse(FileBase):
+    fileid: int
+    fileguid: UUID4
+    ideaid: int
+
+    class Config:
+        from_attributes = True
+
+class IdeaResponse(BaseModel):
+    id: int
+    ideaguid: UUID4
+    title: str
+    description: Optional[str]
+    postedby: int
+    postedon: date
+    ispostedanon: bool
+    isactived: bool
+    user: Optional[UserBasic]
+    files: List[FileResponse] = []
+    comments: List[CommentResponse] = []
+    likes: List[LikeResponse] = []
+
+    class Config:
+        from_attributes = True
+
+# Form data schemas for requests
+class IdeaCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    is_posted_anon: bool = False
+
+class IdeaUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    is_posted_anon: Optional[bool] = None
+
+# Response schemas for paginated results
+class PaginatedResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    data: List[IdeaResponse]
+
+# Statistics schemas
+class IdeaStats(BaseModel):
+    total_likes: int
+    total_comments: int
+    total_files: int
+
+class IdeaDetailResponse(IdeaResponse):
+    stats: IdeaStats

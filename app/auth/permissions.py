@@ -25,7 +25,11 @@ class Permissions(str, Enum):
     READ_CATEGORY = "read_category"
     UPDATE_CATEGORY = "update_category"
     DELETE_CATEGORY = "delete_category"
-
+    
+    CREATE_IDEA = "create_idea"
+    READ_IDEA = "read_idea"
+    UPDATE_IDEA = "update_idea"
+    DELETE_IDEA = "delete_idea"
 
 class RolePermissions:
 
@@ -46,6 +50,10 @@ class RolePermissions:
         Permissions.READ_CATEGORY,
         Permissions.UPDATE_CATEGORY,
         Permissions.DELETE_CATEGORY,
+        Permissions.CREATE_IDEA,
+        Permissions.READ_IDEA,
+        Permissions.UPDATE_IDEA,
+        Permissions.DELETE_IDEA,
     ]
 
     QA_MANAGER = [

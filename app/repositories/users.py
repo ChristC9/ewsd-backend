@@ -99,10 +99,10 @@ class UserRepository:
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail="DB error occurred")
 
-    async def delete_user(self,db:AsyncSession, user_id:int) -> bool:
+    async def delete_user(self, user_id:int) -> bool:
 
         try:
-            user_to_delete = await self.get_user(db, user_id=user_id)
+            user_to_delete = await self.get_user(user_id=user_id)
             await self.db.delete(user_to_delete)
             await self.db.commit()
             return True
