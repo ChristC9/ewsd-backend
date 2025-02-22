@@ -34,8 +34,9 @@ class UserRepository:
 
 
     async def get_all_users(self) -> list[User]:
-        result = await self.db.execute(select(User))
-        users = result.scalars().all()
+        query = select(User)
+        result = await self.db.execute(query)
+        users = result.unique().scalars().all()
         return users
 
 

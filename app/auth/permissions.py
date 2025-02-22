@@ -1,4 +1,5 @@
 from enum import Enum
+from poplib import CR
 from typing import List
 from fastapi import HTTPException, status
 from functools import wraps
@@ -20,6 +21,12 @@ class Permissions(str, Enum):
     UPDATE_USER = "update_user"
     DELETE_USER = "delete_user"
 
+    CREATE_CATEGORY = "create_category"
+    READ_CATEGORY = "read_category"
+    UPDATE_CATEGORY = "update_category"
+    DELETE_CATEGORY = "delete_category"
+
+
 class RolePermissions:
 
     ADMIN = [
@@ -35,6 +42,10 @@ class RolePermissions:
         Permissions.READ_USER,
         Permissions.UPDATE_USER,
         Permissions.DELETE_USER,
+        Permissions.CREATE_CATEGORY,
+        Permissions.READ_CATEGORY,
+        Permissions.UPDATE_CATEGORY,
+        Permissions.DELETE_CATEGORY,
     ]
 
     QA_MANAGER = [
@@ -42,6 +53,10 @@ class RolePermissions:
         Permissions.READ_DEPARTMENT,
         Permissions.UPDATE_DEPARTMENT,
         Permissions.DELETE_DEPARTMENT,
+        Permissions.CREATE_CATEGORY,
+        Permissions.READ_CATEGORY,
+        Permissions.UPDATE_CATEGORY,
+        Permissions.DELETE_CATEGORY,
     ]
 
     QA_STAFF = [

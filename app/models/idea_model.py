@@ -16,8 +16,10 @@ class Idea(CommonBase):
     colpostedon = Column(Date, nullable=False)
     colispostedanon = Column(Boolean, default=False, nullable=False)
     colisactived = Column(Boolean, default=True, nullable=False)
+    colcategory = Column(Integer, ForeignKey('tblcategories.colcategoryid'), nullable=False)
 
     user = relationship("User", lazy="selectin")
     files = relationship("File", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
     comments = relationship("Comment", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
     likes = relationship("Like", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
+    category = relationship("Category", lazy="selectin")

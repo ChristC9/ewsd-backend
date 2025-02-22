@@ -62,7 +62,7 @@ async def read_user(current_user: CurrentUser, user_id: int, db: AsyncSession = 
 @has_permission(Permissions.READ_USER)
 async def read_all_users(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
-    db_users = await user_repo.get_all_users(db)
+    db_users = await user_repo.get_all_users()
     return db_users
 
 
