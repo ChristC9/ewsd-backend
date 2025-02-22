@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from datetime import datetime,timezone
 from app.models.roles_model import Role
 from app.schema.schema import RoleBase, RoleCreate
@@ -30,7 +31,8 @@ class RoleRepository:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error creating role")
     
     async def get_role(self) -> List[Role]:
-        roles = await self.db.query(Role).all()
+        result = await self.db.execute(select(Role))
+        roles = result.scalars().all()
         return roles
     
     async def get_role_by_id(self, role_id: int) -> Role:
