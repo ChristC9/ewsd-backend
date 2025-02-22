@@ -14,6 +14,8 @@ from app.models.idea_model import *
 from app.models.comment_model import *
 from app.models.like_model import *
 from app.models.file_model import *
+from app.models.category_model import *
+
 
 
 # Interpret the config file for Python logging.

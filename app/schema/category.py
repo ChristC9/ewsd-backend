@@ -10,7 +10,7 @@ class CategoryCreateRequest(BaseModel):
 class CategoryCreate(CategoryCreateRequest):
     created_by: str
 
-class Category(CategoryCreate):
+class CategoryBase(CategoryCreate):
     id: int
     created_at: datetime
 

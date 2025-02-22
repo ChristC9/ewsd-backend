@@ -7,7 +7,7 @@ class Like(CommonBase):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     likeuid = Column(UUID(as_uuid=True), default=generate_uuid, unique=True, nullable=False)
-    ideaid = Column(Integer, ForeignKey('tblideas.ideaid'), nullable=False)
+    ideaid = Column(Integer, ForeignKey('tblideas.id'), nullable=False)
     isliked = Column(Boolean)
     postedby = Column(Integer, ForeignKey('users.id'), nullable=False)
     postedon = Column(Date)
