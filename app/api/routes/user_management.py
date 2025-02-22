@@ -52,7 +52,7 @@ async def get_current_user_info(current_user: CurrentUser):
 async def read_user(current_user: CurrentUser, user_id: int, db: AsyncSession = Depends(get_db)):
 
     user_repo = UserRepository(db)
-    user = await user_repo.get_user(db, user_id)
+    user = await user_repo.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -62,7 +62,7 @@ async def read_user(current_user: CurrentUser, user_id: int, db: AsyncSession = 
 @has_permission(Permissions.READ_USER)
 async def read_all_users(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
-    db_users = await user_repo.get_all_users(db)
+    db_users = await user_repo.get_all_users()
     return db_users
 
 
@@ -104,7 +104,7 @@ async def refresh_token(
             
         username = payload.get("sub")
         user_repo = UserRepository(db)
-        user = await user_repo.get_user(db, username=username)
+        user = await user_repo.get_user(username=username)
         
         if not user:
             raise HTTPException(
@@ -133,14 +133,14 @@ async def refresh_token(
 @has_permission(Permissions.UPDATE_USER)
 async def update_user(user_id: int, user_data: UserCreate, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
-    user = await user_repo.update_user(db, user_id, user_data)
+    user = await user_repo.update_user(user_id, user_data)
     return user
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 @has_permission(Permissions.DELETE_USER)
 async def delete_user(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
-    deleted_user = await user_repo.delete_user(db, user_id)
+    deleted_user = await user_repo.delete_user(user_id)
     return deleted_user
 
 @router.post("/forget-password/initiate")
