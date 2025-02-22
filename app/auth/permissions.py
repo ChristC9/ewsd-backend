@@ -20,6 +20,11 @@ class Permissions(str, Enum):
     UPDATE_USER = "update_user"
     DELETE_USER = "delete_user"
 
+    CREATE_IDEA = "create_idea"
+    READ_IDEA = "read_idea"
+    UPDATE_IDEA = "update_idea"
+    DELETE_IDEA = "delete_idea"
+
 class RolePermissions:
 
     ADMIN = [
@@ -35,6 +40,10 @@ class RolePermissions:
         Permissions.READ_USER,
         Permissions.UPDATE_USER,
         Permissions.DELETE_USER,
+        Permissions.CREATE_IDEA,
+        Permissions.READ_IDEA,
+        Permissions.UPDATE_IDEA,
+        Permissions.DELETE_IDEA,
     ]
 
     QA_MANAGER = [
