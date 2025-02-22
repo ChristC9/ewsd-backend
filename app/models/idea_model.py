@@ -11,7 +11,7 @@ class Idea(CommonBase):
     colideaguid = Column(UUID(as_uuid=True), default=generate_uuid, unique=True, nullable=False)
     coltitle = Column(String(255), nullable=False)
     coldescription = Column(String, nullable=True)
-    colthumbnail = Column(String, nullable=True)  # Changed to String to store file path
+    colthumbnail = Column(LargeBinary, nullable=True)  # Changed to String to store file path
     colpostedby = Column(Integer, ForeignKey('users.id'), nullable=False)
     colpostedon = Column(Date, nullable=False)
     colispostedanon = Column(Boolean, default=False, nullable=False)
