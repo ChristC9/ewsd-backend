@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, ByteString, List
 
 from app.schema.pagination import PaginationResponse, PaginationRequest
+from app.schema.category import CategoryBase
 
 class IdeasListRequest(PaginationRequest):
     filter_category: Optional[List[int]] = Field(None, alias="filter[category]")
@@ -19,8 +20,9 @@ class IdeaResponse(BaseModel):
     thumbnail: Optional[str]
     # likes_count: int
     # comments_count: int
-    posted_by: str    # UserBasic
+    posted_by: dict
     posted_on: datetime
+    category: CategoryBase
 
     class Config:
         orm_mode = True

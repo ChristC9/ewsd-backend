@@ -8,8 +8,8 @@ from app.database import get_db
 from app.repositories.ideas import IdeaRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
-from app.schema import pagination
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse
+from app.schema.category import CategoryBase
 
 
 router = APIRouter()
@@ -50,8 +50,22 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
             title = idea.title,
             description = idea.description,
             thumbnail = idea.thumbnail,
-            posted_by = idea.user.username if idea.user.username or show_anoymous_users else "Anonymous",
+            posted_by = {
+                "id": idea.user.id,
+                "firstname": idea.user.firstname,
+                "lastname": idea.user.lastname,
+            } if not idea.ispostedanon or show_anoymous_users else {
+                "id": None,
+                "firstname": "Anonymous",
+                "lastname": "User",
+            },
             posted_on = idea.created_at,
+            category = CategoryBase(
+            id = idea.category.colcategoryid,
+            name = idea.category.colcategoryname,
+            created_by= idea.category.created_by,
+            created_at= idea.category.created_at,
+            )
         )
         data.append(idea_response)
     
