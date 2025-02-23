@@ -74,7 +74,7 @@ class IdeaRepository:
             isactived = True
         )
         self.db.add(new_idea)
-        self.db.flush()
+        await self.db.flush()
 
         if files:
             for file in files:
@@ -88,8 +88,8 @@ class IdeaRepository:
                 )
                 self.db.add(new_file)
 
-        self.db.commit()
-        self.db.refresh(new_idea)
+        await self.db.commit()
+        await self.db.refresh(new_idea)
         return new_idea
     
 

@@ -16,7 +16,7 @@ class CategoryRepository:
     async def create_category(self, category: CategoryCreate) -> Category:
         try:
             new_category = Category(
-                name = category.name,
+                colcategoryname = category.name,
                 created_by = category.created_by,
             )
             self.db.add(new_category)

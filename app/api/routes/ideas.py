@@ -17,16 +17,18 @@ router = APIRouter()
 @router.post("/", status_code=status.HTTP_201_CREATED)
 @has_permission(Permissions.CREATE_IDEA)
 async def create_idea(
+    current_user: CurrentUser,
     title: str = Form(...),
     description: str = Form(None),
     posted_by: int = Form(...),
     thumbnail: UploadFile = File(None),
+    is_posted_anon: bool = Form(False),
     files: List[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     
     idea_repo = IdeaRepository(db)
-    return await idea_repo.create_idea(title, description, posted_by, thumbnail, files)
+    return await idea_repo.create_idea(title, description, posted_by, thumbnail, is_posted_anon, files)
 
 
 @router.get("/", response_model=IdeaListResponse)
