@@ -4,5 +4,5 @@ from app.models.base import CommonBase
 class Category(CommonBase):
     __tablename__ = "tblcategories"
 
-    colcategoryid = Column(Integer, primary_key=True, autoincrement=True)
-    colcategoryname = Column(String(200), nullable=True)
+    categoryid = Column(Integer, primary_key=True, autoincrement=True)
+    categoryname = Column(String(200), nullable=True)
