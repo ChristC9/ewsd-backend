@@ -74,10 +74,10 @@ class IdeaRepository:
                 file_location = await self._save_file(file)
                 
                 new_file = File(
-                    colideaid=new_idea.colideaid,
-                    colfilename=file.filename,
-                    colfilelocation=file_location,  # Store the actual file path
-                    colfiletype=file.content_type
+                    ideaid=new_idea.ideaid,
+                    filename=file.filename,
+                    filelocation=file_location,  # Store the actual file path
+                    filetype=file.content_type
                 )
                 self.db.add(new_file)
 
