@@ -10,6 +10,7 @@ from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse
 from app.schema.category import CategoryBase
+from app.schema.schema import DepartmentBase
 
 
 router = APIRouter()
@@ -21,6 +22,7 @@ async def create_idea(
     title: str = Form(...),
     description: str = Form(None),
     posted_by: int = Form(...),
+    category_id: int = Form(...),
     thumbnail: UploadFile = File(None),
     is_posted_anon: bool = Form(False),
     files: List[UploadFile] = File(None),
@@ -28,7 +30,7 @@ async def create_idea(
 ):
     
     idea_repo = IdeaRepository(db)
-    return await idea_repo.create_idea(title, description, posted_by, thumbnail, is_posted_anon, files)
+    return await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)
 
 
 @router.get("/", response_model=IdeaListResponse)
@@ -44,27 +46,37 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
     idea_repo = IdeaRepository(db)
     ideas, pagination = await idea_repo.get_all_ideas(user_id=user_id, filter_params=query_params)
     data = []
-    for idea in ideas:
+    for item in ideas:
         idea_response = IdeaResponse(
-            id = idea.id,
-            title = idea.title,
-            description = idea.description,
-            thumbnail = idea.thumbnail,
+            id = item["idea"].id,
+            title = item["idea"].title,
+            description = item["idea"].description,
+            likes_count = item["likes_count"],
+            dislikes_count = item["dislikes_count"],
+            comments_count = item["comments_count"],
+            thumbnail = item["idea"].thumbnail,
             posted_by = {
-                "id": idea.user.id,
-                "firstname": idea.user.firstname,
-                "lastname": idea.user.lastname,
-            } if not idea.ispostedanon or show_anoymous_users else {
+                "id": item["idea"].user.id,
+                "firstname": item["idea"].user.firstname,
+                "lastname": item["idea"].user.lastname,
+            } if not item["idea"].ispostedanon or show_anoymous_users else {
                 "id": None,
                 "firstname": "Anonymous",
                 "lastname": "User",
             },
-            posted_on = idea.created_at,
+            posted_on = item["idea"].created_at,
+            department = DepartmentBase(
+                id = item["department"].id,
+                name = item["department"].name,
+                created_by= item["department"].created_by,
+                created_at= item["department"].created_at,
+                updated_at= item["department"].updated_at,
+            ),
             category = CategoryBase(
-            id = idea.category.colcategoryid,
-            name = idea.category.colcategoryname,
-            created_by= idea.category.created_by,
-            created_at= idea.category.created_at,
+                id = item["idea"].category.categoryid,
+                name = item["idea"].category.categoryname,
+                created_by= item["idea"].category.created_by,
+                created_at= item["idea"].category.created_at,
             )
         )
         data.append(idea_response)

@@ -34,8 +34,8 @@ async def create_category(category: CategoryCreateRequest, current_user: Current
     )
     db_category =  await category_repo.create_category(category)
     category_response = CategoryBase(
-        id = db_category.colcategoryid,
-        name = db_category.colcategoryname,
+        id = db_category.categoryid,
+        name = db_category.categoryname,
         created_by = db_category.created_by,
         created_at = db_category.created_at
     )
@@ -49,8 +49,8 @@ async def get_all_categories(current_user: CurrentUser, db: AsyncSession = Depen
     all_categories = []
     for category in result:
         category_response = CategoryBase(
-            id = category.colcategoryid,
-            name = category.colcategoryname,
+            id = category.categoryid,
+            name = category.categoryname,
             created_by = category.created_by,
             created_at = category.created_at
         )
@@ -64,8 +64,8 @@ async def update_category(category_id: int, category_name: str, current_user: Cu
     category_repo = CategoryRepository(db)
     db_category = await category_repo.update_category(category_id, category_name)
     category_response = CategoryBase(
-        id = db_category.colcategoryid,
-        name = db_category.colcategoryid,
+        id = db_category.categoryid,
+        name = db_category.categoryid,
         created_by = db_category.created_by,
         created_at = db_category.created_at
     )

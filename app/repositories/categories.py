@@ -16,7 +16,7 @@ class CategoryRepository:
     async def create_category(self, category: CategoryCreate) -> Category:
         try:
             new_category = Category(
-                colcategoryname = category.name,
+                categoryname = category.name,
                 created_by = category.created_by,
             )
             self.db.add(new_category)
@@ -36,26 +36,26 @@ class CategoryRepository:
     
 
     async def get_category(self, category_id: int) -> Category:
-        query = select(Category).where(Category.id == category_id)
+        query = select(Category).where(Category.categoryid == category_id)
         result = await self.db.execute(query)
         category = result.unique().scalar_one_or_none()
         return category
     
 
     async def update_category(self, category_id: int, category_name: str) -> Category:
-        query = select(Category).where(Category.id == category_id)
+        query = select(Category).where(Category.categoryid == category_id)
         result = await self.db.execute(query)
         category = result.unique().scalar_one_or_none()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
-        category.name = category_name
+        category.categoryname = category_name
         await self.db.commit()
         await self.db.refresh(category)
         return category
 
 
     async def delete_category(self, category_id: int):
-        query = delete(Category).where(Category.id == category_id)
+        query = delete(Category).where(Category.categoryid == category_id)
         await self.db.execute(query)
         await self.db.commit()
         return {"detail": "Category deleted successfully"}
