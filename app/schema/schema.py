@@ -74,6 +74,7 @@ class DepartmentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
 class UserResponse(UserBase):
 
     id: int
