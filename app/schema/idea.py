@@ -15,7 +15,6 @@ class IdeasListRequest(PaginationRequest):
     filter_department: Optional[List[int]] = Field(None, alias="filter[department]")
 
         
-
 class IdeaResponse(BaseModel):
     id: int
     title: str
