@@ -2,6 +2,8 @@ from passlib.context import CryptContext
 import resend
 from app.config import settings
 
+from app.schema.pagination import PaginationResponse
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -29,3 +31,18 @@ def send_otp_email(to_email: str, otp_code: str):
     }
 
     email = resend.Emails.send(params)
+
+def compute_pagination(total: int, page: int, limit: int) -> PaginationResponse:
+    total_pages = (total + limit - 1) // limit
+    
+    next_page = page + 1 if page < total_pages else None
+    prev_page = page - 1 if page > 1 else None
+    
+    return PaginationResponse(
+        total_records=total,
+        current_page=page,
+        total_pages=total_pages,
+        next_page=next_page,
+        prev_page=prev_page
+    )
+    
