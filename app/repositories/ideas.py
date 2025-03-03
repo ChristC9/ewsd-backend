@@ -73,12 +73,13 @@ class IdeaRepository:
             title = title,
             description = description,
             thumbnail = None,
-            categoryid = category_id,
-            postedby = posted_by,
+            categoryid = int(category_id),
+            postedby = int(posted_by),
             postedon = date.today(),
             ispostedanon = is_posted_anon,
             isactived = True
         )
+        print(f"New Idea for user id is : {new_idea.postedby}")
         self.db.add(new_idea)
         await self.db.flush()
 
