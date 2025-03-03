@@ -93,3 +93,9 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
         pagination = pagination
     )
     return idea_list_response
+
+@router.get('/{idea_id}', response_model=IdeaResponse)
+# @has_permission(Permissions.READ_IDEA)
+async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
+    idea_repo = IdeaRepository(db)
+    return await idea_repo.get_idea_by_id(idea_id)
