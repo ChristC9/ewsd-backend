@@ -21,11 +21,12 @@ from app.schema import pagination
 from app.schema.idea import IdeasListRequest
 
 from app.utils.helpers import compute_pagination
+from fastapi import HTTPException,status
 
 
 class IdeaRepository:
 
-    def __init__(self,db: AsyncSession):
+    def __init__(self,db: Session):
         
         self.db = db
         self.upload_dir = Path("uploads")
@@ -193,7 +194,14 @@ class IdeaRepository:
         pagination = compute_pagination(total, filter_params.page, filter_params.limit)
         return ideas_with_counts, pagination
 
+    async def get_idea_by_id(self, idea_id: int)-> Idea:
+        
+        idea_details = self.db.query(Idea).filter(Idea.id == idea_id).first()
 
+        if not idea_details:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
+
+        return idea_details
 
 
 
