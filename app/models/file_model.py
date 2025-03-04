@@ -11,6 +11,6 @@ class File(CommonBase):
     ideaid = Column(Integer, ForeignKey('tblideas.id'), nullable=False)
     filename = Column(String(255))
     filelocation = Column(String(500))
-    filetype = Column(String(10))
+    filetype = Column(String(100))
     
     idea = relationship("Idea", back_populates="files")

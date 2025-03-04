@@ -1,4 +1,4 @@
-from fastapi import APIRouter,status,Depends, Query
+from fastapi import APIRouter, HTTPException,status,Depends, Query
 from fastapi import UploadFile, File, Form
 from typing import List, Annotated
 
@@ -11,6 +11,8 @@ from app.api.deps import CurrentUser
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase
+from app.models.user_model import User
+from sqlalchemy import select
 
 
 router = APIRouter()
@@ -28,6 +30,11 @@ async def create_idea(
     files: List[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
+    
+    user = await db.execute(select(User).where(User.id == posted_by))
+    user = user.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User with ID {posted_by} not found")
     
     idea_repo = IdeaRepository(db)
     return await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)
@@ -86,3 +93,9 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
         pagination = pagination
     )
     return idea_list_response
+
+@router.get('/{idea_id}', response_model=IdeaResponse)
+# @has_permission(Permissions.READ_IDEA)
+async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
+    idea_repo = IdeaRepository(db)
+    return await idea_repo.get_idea_by_id(idea_id)
