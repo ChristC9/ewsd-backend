@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import date
 from typing import List, Optional
@@ -6,6 +8,9 @@ from app.models.like_model import Like
 from app.schema.like import LikeCreate
 
 class LikeRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
     def create_like(self, db: Session, like_data: LikeCreate, user_id: int) -> Like:
         """
         Create a new like or dislike record
@@ -43,6 +48,13 @@ class LikeRepository:
             db.rollback()
             raise e
     
+    async def get_likes_by_idea(self, db: AsyncSession, idea_id: int):
+        query = select(Like).where(Like.ideaid == idea_id)
+        result = await db.execute(query)
+        result = result.scalars().all()
+        return result
+
+
     def get_user_like_for_idea(self, db: Session, idea_id: int, user_id: int) -> Optional[Like]:
         """
         Get a user's like/dislike for a specific idea
