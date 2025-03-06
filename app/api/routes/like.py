@@ -27,12 +27,13 @@ def create_like(
         )
 
 @router.get("/{idea_id}", response_model=List[LikeResponse])
-def get_likes_for_idea(
+async def get_likes_for_idea(
     idea_id: int,
     db: Session = Depends(get_db)
 ):
     like_repository = LikeRepository(db)
-    return like_repository.get_likes_by_idea(db, idea_id)
+    likes = await like_repository.get_likes_by_idea(db, idea_id)
+    return likes
 
 @router.get("/idea/{idea_id}/likes/count")
 def get_like_counts_for_idea(
