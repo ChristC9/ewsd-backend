@@ -204,6 +204,39 @@ class IdeaRepository:
         return idea_details
 
 
+    async def update_idea(self, idea_id: int, title: str, description: str, category_id: int, thumbnail: UploadFile = None, is_posted_anon: bool = False, files: List[UploadFile] = None) -> Idea:
+        
+        idea = await self.get_idea_by_id(idea_id)
+        
+        idea.title = title
+        idea.description = description
+        idea.categoryid = category_id
+        idea.thumbnail = thumbnail
+        idea.ispostedanon = is_posted_anon
+
+        if files:
+            for file in files:
+                file_location = await self._save_file(file)
+                
+                new_file = File(
+                    ideaid=idea_id,
+                    filename=file.filename,
+                    filelocation=file_location,  # Store the actual file path
+                    filetype=file.content_type
+                )
+                self.db.add(new_file)
+
+        await self.db.commit()
+        await self.db.refresh(idea)
+        return idea
+    
+    async def delete_idea(self, idea_id: int) -> Idea:
+        
+        idea = await self.get_idea_by_id(idea_id)
+        await self.db.delete(idea)
+        return {"message": f"Idea id {idea_id} is deleted successfully"}
+
+
 
 
         

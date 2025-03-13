@@ -99,3 +99,15 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
 async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
     idea_repo = IdeaRepository(db)
     return await idea_repo.get_idea_by_id(idea_id)
+
+@router.put('/{idea_id}', response_model=IdeaResponse)
+# @has_permission(Permissions.UPDATE_IDEA)
+async def update_idea(idea_id: int, idea_data: IdeasListRequest, current_user: CurrentUser, db: Session = Depends(get_db)):
+    idea_repo = IdeaRepository(db)
+    return await idea_repo.update_idea(idea_id, idea_data)
+
+@router.delete('/{idea_id}', status_code=status.HTTP_204_NO_CONTENT)
+# @has_permission(Permissions.DELETE_IDEA)
+async def delete_idea(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
+    idea_repo = IdeaRepository(db)
+    return await idea_repo.delete_idea(idea_id)
