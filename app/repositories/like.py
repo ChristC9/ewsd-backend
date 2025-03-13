@@ -1,33 +1,37 @@
+from sqlalchemy import select, delete, update
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Dict
 from app.models.like_model import Like
 from app.schema.like import LikeCreate
 
 class LikeRepository:
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    def create_like(self, db: Session, like_data: LikeCreate, user_id: int) -> Like:
+    async def create_like(self, db: AsyncSession, like_data: LikeCreate, user_id: int) -> Like:
         """
         Create a new like or dislike record
         """
         # Check if user already liked/disliked this idea
-        existing_like = db.query(Like).filter(
+        query = select(Like).where(
             Like.ideaid == like_data.ideaid,
             Like.postedby == user_id
-        ).first()
+        )
+        result = await db.execute(query)
+        existing_like = result.scalar_one_or_none()
         
         if existing_like:
             # Update existing record
             existing_like.isliked = like_data.isliked
             existing_like.isdisliked = like_data.isdisliked
             existing_like.postedon = date.today()
-            db.commit()
-            db.refresh(existing_like)
+            await db.commit()
+            await db.refresh(existing_like)
             return existing_like
         
         # Create new like record
@@ -41,39 +45,43 @@ class LikeRepository:
         
         try:
             db.add(like)
-            db.commit()
-            db.refresh(like)
+            await db.commit()
+            await db.refresh(like)
             return like
         except SQLAlchemyError as e:
-            db.rollback()
+            await db.rollback()
             raise e
     
-    async def get_likes_by_idea(self, db: AsyncSession, idea_id: int):
-        query = select(Like).where(Like.ideaid == idea_id)
-        result = await db.execute(query)
-        result = result.scalars().all()
-        return result
-
-
-    def get_user_like_for_idea(self, db: Session, idea_id: int, user_id: int) -> Optional[Like]:
+    async def get_user_like_for_idea(self, db: AsyncSession, idea_id: int, user_id: int) -> Optional[Like]:
         """
         Get a user's like/dislike for a specific idea
         """
-        return db.query(Like).filter(
+        query = select(Like).where(
             Like.ideaid == idea_id,
             Like.postedby == user_id
-        ).first()
+        )
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
     
+    async def get_likes_by_idea(self, db: AsyncSession, idea_id: int) -> List[Like]:
+        """
+        Get all likes for a specific idea
+        """
+        query = select(Like).where(Like.ideaid == idea_id)
+        result = await db.execute(query)
+        return result.scalars().all()
     
-    def delete_like(self, db: Session, idea_id: int, user_id: int) -> bool:
+    async def delete_like(self, db: AsyncSession, idea_id: int, user_id: int) -> bool:
         """
         Delete or update a like (set isliked to False) for a specific idea by the authenticated user
         """
-        like = db.query(Like).filter(
+        query = select(Like).where(
             Like.ideaid == idea_id, 
             Like.postedby == user_id,
             Like.isliked == True
-        ).first()
+        )
+        result = await db.execute(query)
+        like = result.scalar_one_or_none()
         
         if not like:
             return False
@@ -83,23 +91,27 @@ class LikeRepository:
             if like.isdisliked:
                 # Just remove the like flag but keep the dislike
                 like.isliked = False
-                db.commit()
+                await db.commit()
             else:
                 # If no dislike, remove the entire record
-                db.delete(like)
-                db.commit()
+                await db.delete(like)
+                await db.commit()
             return True
         except SQLAlchemyError:
-            db.rollback()
+            await db.rollback()
             return False
 
-    def delete_dislike(self, db: Session, idea_id: int, user_id: int) -> bool:
-        
-        dislike = db.query(Like).filter(
+    async def delete_dislike(self, db: AsyncSession, idea_id: int, user_id: int) -> bool:
+        """
+        Delete or update a dislike for a specific idea
+        """
+        query = select(Like).where(
             Like.ideaid == idea_id, 
             Like.postedby == user_id,
             Like.isdisliked == True
-        ).first()
+        )
+        result = await db.execute(query)
+        dislike = result.scalar_one_or_none()
         
         if not dislike:
             return False
@@ -109,43 +121,57 @@ class LikeRepository:
             if dislike.isliked:
                 # Just remove the dislike flag but keep the like
                 dislike.isdisliked = False
-                db.commit()
+                await db.commit()
             else:
                 # If no like, remove the entire record
-                db.delete(dislike)
-                db.commit()
+                await db.delete(dislike)
+                await db.commit()
             return True
         except SQLAlchemyError:
-            db.rollback()
+            await db.rollback()
             return False
 
-    def get_alllike_counts_for_idea(self, db: Session, idea_id: int) -> dict:
-    
-        likes_count = db.query(Like).filter(
+    async def get_alllike_counts_for_idea(self, db: AsyncSession, idea_id: int) -> Dict[str, int]:
+        """
+        Get both like and dislike counts for an idea
+        """
+        likes_query = select(Like).where(
             Like.ideaid == idea_id,
             Like.isliked == True
-        ).count()
+        )
+        likes_result = await db.execute(likes_query)
+        likes_count = len(likes_result.scalars().all())
         
-        dislikes_count = db.query(Like).filter(
+        dislikes_query = select(Like).where(
             Like.ideaid == idea_id,
             Like.isdisliked == True
-        ).count()
+        )
+        dislikes_result = await db.execute(dislikes_query)
+        dislikes_count = len(dislikes_result.scalars().all())
         
         return {
             "likes": likes_count,
             "dislikes": dislikes_count
         }
     
-    def get_likes_counts_for_idea(self, db: Session, idea_id: int) -> int:
-    
-        return db.query(Like).filter(
+    async def get_likes_counts_for_idea(self, db: AsyncSession, idea_id: int) -> int:
+        """
+        Get only like count for an idea
+        """
+        query = select(Like).where(
             Like.ideaid == idea_id,
             Like.isliked == True
-        ).count()
+        )
+        result = await db.execute(query)
+        return len(result.scalars().all())
     
-    def get_dislikes_counts_for_idea(self, db: Session, idea_id: int) -> int:
-       
-        return db.query(Like).filter(
+    async def get_dislikes_counts_for_idea(self, db: AsyncSession, idea_id: int) -> int:
+        """
+        Get only dislike count for an idea
+        """
+        query = select(Like).where(
             Like.ideaid == idea_id,
             Like.isdisliked == True
-        ).count()
+        )
+        result = await db.execute(query)
+        return len(result.scalars().all())
