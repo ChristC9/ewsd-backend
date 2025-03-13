@@ -76,7 +76,13 @@ async def login(credentials: Annotated[OAuth2PasswordRequestForm, Depends()], db
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"}
             )
-
+    
+    if user.isdisabled == True:
+        raise HTTPException(
+            status_code=403, 
+            detail="User is disabled",
+            headers={"WWW-Authenticate": "Bearer"}
+            )
     access_token = get_access_token(user)
     refresh_token = get_refresh_token(user)
 
