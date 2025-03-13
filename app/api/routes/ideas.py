@@ -8,7 +8,8 @@ from app.database import get_db
 from app.repositories.ideas import IdeaRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
-from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse
+from app.schema import idea
+from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, FileResponse
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase
 from app.models.user_model import User
@@ -97,8 +98,52 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
 @router.get('/{idea_id}', response_model=IdeaResponse)
 # @has_permission(Permissions.READ_IDEA)
 async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
+    # check if user is admin
+    if current_user.role.name in ["ADMIN", "QA MANAGER"]:
+        show_anoymous_users = True
+    else:
+        show_anoymous_users = False
     idea_repo = IdeaRepository(db)
-    return await idea_repo.get_idea_by_id(idea_id)
+    item = await idea_repo.get_idea_by_id(idea_id)
+    idea_response = IdeaResponse(
+            id = item["idea"].id,
+            title = item["idea"].title,
+            description = item["idea"].description,
+            likes_count = item["likes_count"],
+            dislikes_count = item["dislikes_count"],
+            comments_count = item["comments_count"],
+            thumbnail = item["idea"].thumbnail,
+            posted_by = {
+                "id": item["idea"].user.id,
+                "firstname": item["idea"].user.firstname,
+                "lastname": item["idea"].user.lastname,
+            } if not item["idea"].ispostedanon or show_anoymous_users else {
+                "id": None,
+                "firstname": "Anonymous",
+                "lastname": "User",
+            },
+            posted_on = item["idea"].created_at,
+            department = DepartmentBase(
+                id = item["department"].id,
+                name = item["department"].name,
+                created_by= item["department"].created_by,
+                created_at= item["department"].created_at,
+                updated_at= item["department"].updated_at,
+            ),
+            category = CategoryBase(
+                id = item["idea"].category.categoryid,
+                name = item["idea"].category.categoryname,
+                created_by= item["idea"].category.created_by,
+                created_at= item["idea"].category.created_at,
+            ),
+            files=[FileResponse(
+                id = file.id,
+                filename = file.filename,
+                filetype = file.filetype
+            ) for file in item["idea"].files]
+            if item["idea"].files else []   
+        )
+    return idea_response
 
 @router.put('/{idea_id}', response_model=IdeaResponse)
 # @has_permission(Permissions.UPDATE_IDEA)

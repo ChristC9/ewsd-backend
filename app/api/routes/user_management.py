@@ -93,7 +93,7 @@ async def login(credentials: Annotated[OAuth2PasswordRequestForm, Depends()], db
     }
 
 
-@token_router.post("/refresh", response_model=RefreshToken)
+@token_router.post("/refresh", response_model=Token)
 async def refresh_token(
     token: RefreshToken,
     db: AsyncSession = Depends(get_db)

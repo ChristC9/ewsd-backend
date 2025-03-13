@@ -30,7 +30,9 @@ async def get_likes_for_idea(
     db: AsyncSession = Depends(get_db)
 ):
     like_repository = LikeRepository(db)
-    return await like_repository.get_likes_by_idea(db, idea_id)
+
+    likes = await like_repository.get_likes_by_idea(db, idea_id)
+    return likes
 
 @router.get("/idea/{idea_id}/likes/count")
 async def get_like_counts_for_idea(
