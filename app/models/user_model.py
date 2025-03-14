@@ -2,6 +2,7 @@ from datetime import datetime,timezone
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from app.models.base import CommonBase
+from sqlalchemy.sql import func
 
 
 class User(CommonBase):
@@ -17,7 +18,7 @@ class User(CommonBase):
     password = Column(String(255))
     isdisabled = Column(Boolean, default=False)
     islocked = Column(Boolean, default=False)
-    lastlogin = Column(DateTime, nullable=True, default=datetime.now(timezone.utc))
+    lastlogin = Column(DateTime(timezone=True),nullable=False,server_default=func.now())
     role_id = Column(Integer, ForeignKey('roles.id'))
     department_id = Column(Integer, ForeignKey('departments.id'))
 
