@@ -16,7 +16,7 @@ algorithm = settings.ALGORITHM
 
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
     user_repo = UserRepository(db)
-    user = await user_repo.get_user(username=username,password=password)
+    user = await user_repo.get_user(username=username)
     if not user or not verify_password(password, user.password):
         return None
     return user
