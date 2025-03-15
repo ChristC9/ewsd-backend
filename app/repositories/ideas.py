@@ -18,6 +18,7 @@ from app.models.user_model import User
 from app.models.like_model import Like
 
 from app.schema import pagination
+from app.schema import idea
 from app.schema.idea import IdeasListRequest
 
 from app.utils.helpers import compute_pagination
@@ -26,7 +27,7 @@ from fastapi import HTTPException,status
 
 class IdeaRepository:
 
-    def __init__(self,db: Session):
+    def __init__(self, db: AsyncSession):
         
         self.db = db
         self.upload_dir = Path("uploads")
@@ -194,14 +195,94 @@ class IdeaRepository:
         pagination = compute_pagination(total, filter_params.page, filter_params.limit)
         return ideas_with_counts, pagination
 
+
     async def get_idea_by_id(self, idea_id: int)-> Idea:
         
-        idea_details = self.db.query(Idea).filter(Idea.id == idea_id).first()
+        likes_count = (
+            select(Like.ideaid, func.count(Like.id).label('likes_count'))
+            .where(Like.isliked == True)
+            .group_by(Like.ideaid)
+            .subquery()
+        )
 
+        # Subquery to count dislikes for each idea
+        dislikes_count = (
+            select(Like.ideaid, func.count(Like.id).label('dislikes_count'))
+            .where(Like.isliked == False)
+            .group_by(Like.ideaid)
+            .subquery()
+        )
+
+        # Subquery to count comments for each idea
+        comments_count = (
+            select(Comment.ideaid, func.count(Comment.id).label('comments_count'))
+            .group_by(Comment.ideaid)
+            .subquery()
+        )
+
+        query = (
+            select(
+            Idea,
+            func.coalesce(likes_count.c.likes_count, 0).label('likes_count'),
+            func.coalesce(dislikes_count.c.dislikes_count, 0).label('dislikes_count'),
+            func.coalesce(comments_count.c.comments_count, 0).label('comments_count'),
+            Department
+            )
+            .outerjoin(likes_count, Idea.id == likes_count.c.ideaid)
+            .outerjoin(dislikes_count, Idea.id == dislikes_count.c.ideaid)
+            .outerjoin(comments_count, Idea.id == comments_count.c.ideaid)
+            .join(User, Idea.postedby == User.id)
+            .join(Department, User.department_id == Department.id)
+            .where(Idea.isactived == True)
+            .where(Idea.id == idea_id)
+        )
+
+        result = await self.db.execute(query)
+        row = result.unique().first()
+        idea_details = {
+            "idea": row[0],
+            "likes_count": row[1],
+            "dislikes_count": row[2], 
+            "comments_count": row[3],
+            "department": row[4],
+        }
         if not idea_details:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
 
         return idea_details
+
+
+    async def update_idea(self, idea_id: int, title: str, description: str, category_id: int, thumbnail: UploadFile = None, is_posted_anon: bool = False, files: List[UploadFile] = None) -> Idea:
+        
+        idea = await self.get_idea_by_id(idea_id)
+        
+        idea.title = title
+        idea.description = description
+        idea.categoryid = category_id
+        idea.thumbnail = thumbnail
+        idea.ispostedanon = is_posted_anon
+
+        if files:
+            for file in files:
+                file_location = await self._save_file(file)
+                
+                new_file = File(
+                    ideaid=idea_id,
+                    filename=file.filename,
+                    filelocation=file_location,  # Store the actual file path
+                    filetype=file.content_type
+                )
+                self.db.add(new_file)
+
+        await self.db.commit()
+        await self.db.refresh(idea)
+        return idea
+    
+    async def delete_idea(self, idea_id: int) -> Idea:
+        
+        idea = await self.get_idea_by_id(idea_id)
+        await self.db.delete(idea)
+        return {"message": f"Idea id {idea_id} is deleted successfully"}
 
 
 

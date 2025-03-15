@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 from datetime import datetime, date
 from typing import Optional, List
 
@@ -12,6 +12,10 @@ class UserBase(BaseModel):
     username: str
     default_pwd: str
     password: str
+    isdisabled: bool = False
+    islocked: bool = False
+    lastlogin: Optional[datetime] = None
+
 
     class Config:
         orm_mode = True
@@ -90,10 +94,10 @@ class UserResponse(UserBase):
     department: DepartmentResponse
     created_at: datetime
     updated_at: datetime
-
+    password: str = Field(exclude=True)
+    default_pwd: str = Field(exclude=True)
     class Config:
         from_attributes = True
-
 class CommentBase(BaseModel):
     comment: str
     ispostedanon: bool = False

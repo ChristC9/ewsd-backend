@@ -1,10 +1,21 @@
 from datetime import datetime
+from re import A
 from pydantic import BaseModel, Field
-from typing import Optional, ByteString, List
+from typing import Optional, ByteString, List, Any
 
 from app.schema.pagination import PaginationResponse, PaginationRequest
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase
+
+
+class FileResponse(BaseModel):
+    id: int
+    filename: str
+    filetype: str
+
+    class Config:
+        from_attributes = True
+
 
 class IdeasListRequest(PaginationRequest):
     filter_category: Optional[List[int]] = Field(None, alias="filter[category]")
@@ -13,6 +24,7 @@ class IdeasListRequest(PaginationRequest):
     search: Optional[str] = Field(None)
     filter_my: Optional[bool] = Field(None, alias="filter[my]")
     filter_department: Optional[List[int]] = Field(None, alias="filter[department]")
+
 
         
 class IdeaResponse(BaseModel):
@@ -27,6 +39,7 @@ class IdeaResponse(BaseModel):
     posted_on: datetime
     category: CategoryBase
     department: DepartmentBase
+    files: Optional[List[FileResponse]] = None
 
     class Config:
         orm_mode = True
