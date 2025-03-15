@@ -2,7 +2,8 @@ from ast import For
 from time import sleep
 import time
 from unittest import result
-from fastapi import Depends, HTTPException, APIRouter, status
+from urllib import response
+from fastapi import Depends, HTTPException, APIRouter, status, Query
 from fastapi import security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -15,7 +16,8 @@ from datetime import datetime, timezone, timedelta
 
 from app.api.deps import CurrentUser, OptionalCurrentUser
 from app.models.security import Otp
-from app.schema.schema import UserCreate, UserLogin, Token, RefreshToken, UserResponse
+from app.schema import pagination
+from app.schema.schema import UserCreate, UserLogin, Token, RefreshToken, UserResponse, UserListResponse, UserListRequest
 from app.schema.security import ForgetPasswordInitiateRequest, ResetPasswordRequest, OtpCreate, OtpUpdate
 from app.models.user_model import User as UserModel
 from app.repositories.users import UserRepository
@@ -58,12 +60,13 @@ async def read_user(current_user: CurrentUser, user_id: int, db: AsyncSession = 
     return user
 
 
-@router.get("/", response_model=list[UserResponse])
+@router.get("/", response_model=UserListResponse)
 @has_permission(Permissions.READ_USER)
-async def read_all_users(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+async def read_all_users(filter_params: Annotated[UserListRequest, Query()], current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
-    db_users = await user_repo.get_all_users()
-    return db_users
+    db_users, pagination = await user_repo.get_all_users(filter_params)
+    users_response = UserListResponse(data=db_users, pagination=pagination)
+    return users_response
 
 
 @router.post("/login", response_model=Token)
@@ -135,6 +138,7 @@ async def update_user(user_id: int, user_data: UserCreate, current_user: Current
     user_repo = UserRepository(db)
     user = await user_repo.update_user(user_id, user_data)
     return user
+
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 @has_permission(Permissions.DELETE_USER)
