@@ -3,6 +3,7 @@ from typing import Optional
 
 from datetime import datetime
 
+from app.schema.pagination import PaginationRequest, PaginationResponse
 
 class CategoryCreateRequest(BaseModel):
     name: str
@@ -15,5 +16,10 @@ class CategoryBase(CategoryCreate):
     created_at: datetime
 
 
+class CategroyListRequest(PaginationRequest):
+   search: Optional[str] = None
 
-    
+
+class CategoryListResponse(BaseModel):
+    data: list[CategoryBase]
+    pagination: PaginationResponse

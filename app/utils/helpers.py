@@ -1,6 +1,8 @@
 from passlib.context import CryptContext
 import resend
+
 from app.config import settings
+from app.services.mail import send_email
 
 from app.schema.pagination import PaginationResponse
 
@@ -21,16 +23,18 @@ def generate_otp_code(length=6) -> str:
 
 
 def send_otp_email(to_email: str, otp_code: str):
-    resend.api_key = settings.RESEND_API_KEY
+    # resend.api_key = settings.RESEND_API_KEY
 
-    params: resend.Emails.SendParams = {
-        "from": "EWSD <onboarding@resend.dev>",
-        "to": [f"{to_email}"],
-        "subject": "Sending OTP Code",
-        "html": f"Here is OTP code <strong>{otp_code}</strong>",
-    }
+    # params: resend.Emails.SendParams = {
+    #     "from": "onboarding@resend.dev",
+    #     "to": [f"{to_email}"],
+    #     "subject": "Sending OTP Code",
+    #     "html": f"Here is OTP code <strong>{otp_code}</strong>",
+    # }
 
-    email = resend.Emails.send(params)
+    # email = resend.Emails.send(params)
+    send_email(to_email, "Sending OTP Code", f"Here is OTP code <strong>{otp_code}</strong>")
+
 
 def compute_pagination(total: int, page: int, limit: int) -> PaginationResponse:
     total_pages = (total + limit - 1) // limit
