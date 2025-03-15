@@ -1,6 +1,7 @@
+from calendar import c
 from fastapi import HTTPException,status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError
 from sqlalchemy.orm import Session
 import bcrypt
@@ -8,15 +9,19 @@ import traceback
 
 from datetime import datetime, timezone
 
-from app.schema.schema import UserCreate
+from app.schema import pagination
+from app.schema.schema import UserCreate, UserListRequest
 from app.models.user_model import User
+from app.models.department_model import Department
+from app.models.idea_model import Idea
+from app.utils.helpers import compute_pagination
+
 
 class UserRepository:
 
-    def __init__(self,db:Session):
+    def __init__(self,db: AsyncSession):
         self.db = db
 
-        
 
     async def get_user(self, *, username: str = None, user_id: int = None, email: str = None) -> User:
         if username is not None:
@@ -33,11 +38,45 @@ class UserRepository:
         return user
 
 
-    async def get_all_users(self) -> list[User]:
-        query = select(User)
+    async def get_all_users(self, filter_params: UserListRequest) -> list[User]:
+        """Get all users by filter"""
+        query = (
+            select(User)
+        )
+        if filter_params.search:
+            search_term = f"%{filter_params.search}%"
+            query = query.where(
+            (User.firstname.ilike(search_term)) | 
+            (User.lastname.ilike(search_term)) |
+            (User.username.ilike(search_term))
+            )
+        if filter_params.department_id:
+            query = query.where(User.department_id == filter_params.department_id)
+        
+        offset = (filter_params.page - 1) * filter_params.limit
+        query = query.offset(offset).limit(filter_params.limit)
         result = await self.db.execute(query)
         users = result.unique().scalars().all()
-        return users
+
+        total_query = (
+            select(func.count(User.id))
+        )
+        if filter_params.search:
+            search_term = f"%{filter_params.search}%"
+            total_query = total_query.where(
+            (User.firstname.ilike(search_term)) | 
+            (User.lastname.ilike(search_term)) |
+            (User.username.ilike(search_term)) |
+            ((User.firstname + ' ' + User.lastname).ilike(search_term))
+            )
+        if filter_params.department_id:
+            total_query = total_query.where(User.department_id == filter_params.department_id)
+        
+        total_result = await self.db.execute(total_query)
+        total = total_result.unique().scalar_one_or_none()
+
+        pagination = compute_pagination(total, filter_params.page, filter_params.limit)
+        return users, pagination
 
 
     async def create_user(self, user: UserCreate) -> User:

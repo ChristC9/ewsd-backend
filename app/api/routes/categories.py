@@ -1,6 +1,6 @@
 from calendar import c
 from urllib import response
-from fastapi import Depends, HTTPException, APIRouter, status
+from fastapi import Depends, HTTPException, APIRouter, status, Query
 from fastapi import security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -16,7 +16,8 @@ from sqlmodel import all_
 from app.api.deps import CurrentUser, OptionalCurrentUser
 from app.models.category_model import Category
 from app.repositories.categories import CategoryRepository
-from app.schema.category import CategoryCreateRequest, CategoryCreate, CategoryBase
+from app.schema import pagination
+from app.schema.category import CategoryCreateRequest, CategoryCreate, CategoryBase, CategoryListResponse, CategroyListRequest
 from app.auth.permissions import has_permission, Permissions
 
 from app.database import get_db
@@ -41,11 +42,11 @@ async def create_category(category: CategoryCreateRequest, current_user: Current
     )
     return category_response
 
-@router.get("/", response_model=list[CategoryBase])
+@router.get("/", response_model=CategoryListResponse)
 @has_permission(Permissions.READ_CATEGORY)
-async def get_all_categories(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+async def get_all_categories(filter_params: Annotated[CategroyListRequest, Query()], current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     category_repo = CategoryRepository(db)
-    result = await category_repo.get_all_categories()
+    result, pagination = await category_repo.get_all_categories(filter_params)
     all_categories = []
     for category in result:
         category_response = CategoryBase(
@@ -55,7 +56,11 @@ async def get_all_categories(current_user: CurrentUser, db: AsyncSession = Depen
             created_at = category.created_at
         )
         all_categories.append(category_response)
-    return all_categories
+    all_categories_response = CategoryListResponse(
+        data=all_categories,
+        pagination=pagination
+    )
+    return all_categories_response
 
 
 @router.patch("/{category_id}", response_model=CategoryBase)

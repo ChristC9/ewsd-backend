@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     SERVER_PORT : int
     OTP_EXPIRE_MINUTES : int
     RESEND_API_KEY : str
+    MAILER_API_KEY : str
 
     
     @property
