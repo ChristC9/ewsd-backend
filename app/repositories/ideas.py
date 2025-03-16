@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import date
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, or_, select, func
+from sqlalchemy import and_, or_, select, func, delete
 from fastapi import UploadFile
 import shutil
 from pathlib import Path
@@ -126,6 +126,8 @@ class IdeaRepository:
             .subquery()
         )
 
+        popularity_score = func.coalesce(likes_count.c.likes_count, 0) - func.coalesce(dislikes_count.c.dislikes_count, 0)
+
         query = (
             select(
             Idea,
@@ -133,6 +135,7 @@ class IdeaRepository:
             func.coalesce(dislikes_count.c.dislikes_count, 0).label('dislikes_count'),
             func.coalesce(comments_count.c.comments_count, 0).label('comments_count'),
             Department,
+            popularity_score.label('popularity_score')
             )
             .outerjoin(likes_count, Idea.id == likes_count.c.ideaid)
             .outerjoin(dislikes_count, Idea.id == dislikes_count.c.ideaid)
@@ -160,6 +163,7 @@ class IdeaRepository:
         sort_params = [
             (likes_count.c.likes_count, filter_params.sort_by_likes),
             (Idea.created_at, filter_params.sort_by_date),
+            (popularity_score, filter_params.sort_by_popularity)
         ]
 
         for field, order in sort_params:
@@ -241,6 +245,8 @@ class IdeaRepository:
 
         result = await self.db.execute(query)
         row = result.unique().first()
+        if not row:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
         idea_details = {
             "idea": row[0],
             "likes_count": row[1],
@@ -249,8 +255,6 @@ class IdeaRepository:
             "department": row[4],
             "reports_count": len(row[0].reports)
         }
-        if not idea_details:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
 
         return idea_details
 
@@ -301,6 +305,10 @@ class IdeaRepository:
 
 
     async def report_idea(self, reportCreate: idea_schema.IdeaReportCreate):
+        # TODO: Check if idea exists
+        idea = await self.get_idea_by_id(reportCreate.idea_id)
+        if not idea:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
         report = Report(
             reportedby = reportCreate.user_id,
             ideaid = reportCreate.idea_id,
@@ -326,8 +334,9 @@ class IdeaRepository:
 
 
     async def delete_report_idea(self, report_id: int):
-        report = await self.get_report_by_id(report_id)
-        await self.db.delete(report)
+        query = delete(Report).where(Report.id == report_id)
+        await self.db.execute(query)
+        await self.db.commit()
         return f"Report id {report_id} is deleted successfully"
         
 

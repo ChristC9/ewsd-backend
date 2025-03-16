@@ -21,6 +21,7 @@ class IdeasListRequest(PaginationRequest):
     filter_category: Optional[List[int]] = Field(None, alias="filter[category]")
     sort_by_date: Optional[int] = Field(None, alias="sort[date]")
     sort_by_likes: Optional[int] = Field(None, alias="sort[likes]")
+    sort_by_popularity: Optional[int] = Field(None, alias="sort[popularity]")
     search: Optional[str] = Field(None)
     filter_my: Optional[bool] = Field(None, alias="filter[my]")
     filter_reported: Optional[bool] = Field(None, alias="filter[reported]")
