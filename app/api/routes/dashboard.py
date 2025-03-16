@@ -27,6 +27,7 @@ async def get_ideas_by_department(
 
 @router.get("/ideas-by-category", status_code=status.HTTP_200_OK)
 async def get_ideas_by_category(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ):
     dashboard_repo = DashboardRepository(db)
@@ -39,6 +40,7 @@ async def get_ideas_by_category(
 
 @router.get("/contributers-by-department", status_code=status.HTTP_200_OK)
 async def get_contributers_by_department(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -54,6 +56,7 @@ async def get_contributers_by_department(
 
 @router.get("/anon-stats", status_code=status.HTTP_200_OK)
 async def get_anon_stats(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -62,3 +65,7 @@ async def get_anon_stats(
     dashboard_repo = DashboardRepository(db)
     result = await dashboard_repo.get_anonymous_stats()
     return result
+
+
+
+

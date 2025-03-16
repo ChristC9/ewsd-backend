@@ -15,6 +15,7 @@ from app.models.comment_model import *
 from app.models.like_model import *
 from app.models.file_model import *
 from app.models.category_model import *
+from app.models.report_model import *
 
 
 
