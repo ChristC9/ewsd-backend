@@ -16,6 +16,7 @@ class Idea(CommonBase):
     postedon = Column(Date, nullable=False)
     ispostedanon = Column(Boolean, default=False, nullable=False)
     isactived = Column(Boolean, default=True, nullable=False)
+    isreported = Column(Boolean, default=False)
     categoryid = Column(Integer, ForeignKey('tblcategories.categoryid'), nullable=False)
 
     user = relationship("User", lazy="selectin")
@@ -23,3 +24,4 @@ class Idea(CommonBase):
     comments = relationship("Comment", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
     likes = relationship("Like", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
     category = relationship("Category", lazy="selectin")
+    reports = relationship("Report", lazy="selectin")

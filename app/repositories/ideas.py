@@ -16,9 +16,10 @@ from app.models.comment_model import Comment
 from app.models.department_model import Department
 from app.models.user_model import User
 from app.models.like_model import Like
+from app.models.report_model import Report
 
 from app.schema import pagination
-from app.schema import idea
+from app.schema import idea as idea_schema
 from app.schema.idea import IdeasListRequest
 
 from app.utils.helpers import compute_pagination
@@ -66,15 +67,14 @@ class IdeaRepository:
                    is_posted_anon: bool = False,
                    files: List[UploadFile] = None) -> Idea:
         
-        thumbnail_bytes = None
 
-        # if thumbnail:
-        #     thumbnail_bytes = await self.convert_file_to_bytes(thumbnail)
+        if thumbnail:
+            thumbnail_bytes = await self.convert_file_to_bytes(thumbnail)
 
         new_idea = Idea (
             title = title,
             description = description,
-            thumbnail = None,
+            thumbnail = thumbnail_bytes,
             categoryid = int(category_id),
             postedby = int(posted_by),
             postedon = date.today(),
@@ -132,7 +132,7 @@ class IdeaRepository:
             func.coalesce(likes_count.c.likes_count, 0).label('likes_count'),
             func.coalesce(dislikes_count.c.dislikes_count, 0).label('dislikes_count'),
             func.coalesce(comments_count.c.comments_count, 0).label('comments_count'),
-            Department
+            Department,
             )
             .outerjoin(likes_count, Idea.id == likes_count.c.ideaid)
             .outerjoin(dislikes_count, Idea.id == dislikes_count.c.ideaid)
@@ -149,7 +149,8 @@ class IdeaRepository:
                 Idea.description.ilike(f"%{filter_params.search}%")
             )) if filter_params.search else None,
             (Idea.postedby == user_id) if filter_params.filter_my else None,
-            (Department.id.in_(filter_params.filter_department)) if filter_params.filter_department else None
+            (Department.id.in_(filter_params.filter_department)) if filter_params.filter_department else None,
+            (Idea.isreported == True) if filter_params.filter_reported else None
         ]
 
         for condition in filters:
@@ -176,7 +177,8 @@ class IdeaRepository:
             "likes_count": row[1],
             "dislikes_count": row[2], 
             "comments_count": row[3],
-            "department": row[4]
+            "department": row[4],
+            "reports_count": len(row[0].reports)
             } for row in rows
         ]
 
@@ -245,6 +247,7 @@ class IdeaRepository:
             "dislikes_count": row[2], 
             "comments_count": row[3],
             "department": row[4],
+            "reports_count": len(row[0].reports)
         }
         if not idea_details:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
@@ -285,7 +288,48 @@ class IdeaRepository:
         return {"message": f"Idea id {idea_id} is deleted successfully"}
 
 
+    
+    async def get_idea_reports(self, idea_id: int):
+        query = (
+            select(Report)
+            .where(Report.ideaid == idea_id)
+        )
 
+        result = await self.db.execute(query)
+        reports = result.unique().scalars() 
+        return reports
+
+
+    async def report_idea(self, reportCreate: idea_schema.IdeaReportCreate):
+        report = Report(
+            reportedby = reportCreate.user_id,
+            ideaid = reportCreate.idea_id,
+            reportedreason = reportCreate.reason
+        )
+        self.db.add(report)
+        await self.db.commit()
+        await self.db.refresh(report)
+        return report
+
+
+    async def get_report_by_id(self, report_id: int):
+        query = (
+            select(Report)
+            .where(Report.id == report_id)
+        )
+
+        result = await self.db.execute(query)
+        report = result.unique().first()
+        if not report:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+        return report
+
+
+    async def delete_report_idea(self, report_id: int):
+        report = await self.get_report_by_id(report_id)
+        await self.db.delete(report)
+        return f"Report id {report_id} is deleted successfully"
+        
 
         
 
