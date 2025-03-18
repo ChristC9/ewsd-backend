@@ -13,6 +13,7 @@ from app.models.report_model import Report
 from app.repositories.ideas import IdeaRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
+from ..deps import get_current_user
 from app.schema import idea
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, FileResponse, IdeaReportCreate, ReportRequest
 from app.schema.category import CategoryBase
@@ -44,6 +45,9 @@ async def create_idea(
     user = user.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail=f"User with ID {posted_by} not found")
+    
+    if user.isdisabled:
+        raise HTTPException(status_code=400, detail=f"User account {posted_by} is disabled and cannot post ideas")
     
     idea_repo = IdeaRepository(db)
     return await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)

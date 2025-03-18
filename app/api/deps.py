@@ -85,3 +85,16 @@ async def check_user_role(role_name: str, current_user: UserModel = Depends(get_
 
 CurrentUser = Annotated[UserModel, Depends(get_current_user)]
 OptionalCurrentUser = Annotated[Optional[UserModel], Depends(get_current_user)]
+
+
+# def check_user_not_disabled():
+    
+#     async def dependency(current_user: CurrentUser = Depends(get_current_user)):
+#         if current_user.isdisabled:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Your account is disabled. You cannot perform this action."
+#             )
+#         return current_user
+    
+#     return dependency
