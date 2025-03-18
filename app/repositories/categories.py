@@ -1,11 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 
 from datetime import datetime,timezone
 from app.models.category_model import Category
-from app.schema.category import CategoryCreate
+from app.schema.category import CategoryCreate, CategroyListRequest
 from fastapi import HTTPException, status
 from typing import List
+
+from app.utils.helpers import compute_pagination
+
 
 
 class CategoryRepository:
@@ -29,10 +32,25 @@ class CategoryRepository:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error creating category")
     
     
-    async def get_all_categories(self) -> List[Category]:
-        result = await self.db.execute(select(Category))
+    async def get_all_categories(self, filter_params: CategroyListRequest) -> List[Category]:
+        query = select(Category)
+        if filter_params.search:
+            query = query.where(Category.categoryname.ilike(f"%{filter_params.search}%"))
+        
+        offset = (filter_params.page - 1) * filter_params.limit
+        query = query.offset(offset).limit(filter_params.limit)
+        result = await self.db.execute(query)
         categories = result.unique().scalars().all()
-        return categories
+
+        count_query = select(func.count(Category.categoryid))
+        if filter_params.search:
+            count_query = count_query.where(Category.categoryname.ilike(f"%{filter_params.search}%"))
+        count_result = await self.db.execute(count_query)
+        total = count_result.unique().scalar_one()
+
+        pagination = compute_pagination(total, filter_params.page, filter_params.limit)
+
+        return categories, pagination
     
 
     async def get_category(self, category_id: int) -> Category:

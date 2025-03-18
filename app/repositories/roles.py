@@ -26,7 +26,7 @@ class RoleRepository:
             await self.db.refresh(new_role)
             return new_role
         except Exception as e:
-            self.db.rollback()
+            await self.db.rollback()
             print("Role Creation Error is " + str(e))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error creating role")
     

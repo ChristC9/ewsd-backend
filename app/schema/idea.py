@@ -21,8 +21,10 @@ class IdeasListRequest(PaginationRequest):
     filter_category: Optional[List[int]] = Field(None, alias="filter[category]")
     sort_by_date: Optional[int] = Field(None, alias="sort[date]")
     sort_by_likes: Optional[int] = Field(None, alias="sort[likes]")
+    sort_by_popularity: Optional[int] = Field(None, alias="sort[popularity]")
     search: Optional[str] = Field(None)
     filter_my: Optional[bool] = Field(None, alias="filter[my]")
+    filter_reported: Optional[bool] = Field(None, alias="filter[reported]")
     filter_department: Optional[List[int]] = Field(None, alias="filter[department]")
 
 
@@ -35,6 +37,7 @@ class IdeaResponse(BaseModel):
     likes_count: int
     dislikes_count: int
     comments_count: int
+    reports_count: Optional[int] = 0
     posted_by: dict
     posted_on: datetime
     category: CategoryBase
@@ -50,4 +53,10 @@ class IdeaListResponse(BaseModel):
     pagination: PaginationResponse
 
 
+class ReportRequest(BaseModel):
+    reason: Optional[str] = None
 
+class IdeaReportCreate(BaseModel):
+    user_id: int
+    idea_id: int
+    reason: Optional[str] = None

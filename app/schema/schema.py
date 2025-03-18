@@ -2,6 +2,8 @@ from pydantic import BaseModel, UUID4, Field
 from datetime import datetime, date
 from typing import Optional, List
 
+from app.schema.pagination import PaginationRequest, PaginationResponse
+
 class UserBase(BaseModel):
 
     firstname: str
@@ -17,6 +19,12 @@ class UserBase(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserListRequest(PaginationRequest):
+    search: Optional[str] = None
+    department_id: Optional[int] = None
+    role_id: Optional[int] = None
 
 
 class Token(BaseModel):
@@ -192,3 +200,8 @@ class IdeaStats(BaseModel):
 
 class IdeaDetailResponse(IdeaResponse):
     stats: IdeaStats
+
+
+class UserListResponse(BaseModel):
+    data: List[UserResponse]
+    pagination: PaginationResponse
