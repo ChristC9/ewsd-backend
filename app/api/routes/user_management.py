@@ -210,3 +210,18 @@ async def reset_password(
     
     return {"detail": "Password reset successfully."}
 
+@router.patch("/{user_id}/disable", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def disable_user(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+
+    user_repo = UserRepository(db)
+    user = await user_repo.disable_user(user_id)
+    return user
+
+@router.patch("/{user_id}/enable", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def enable_user(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    
+    user_repo = UserRepository(db)
+    user = await user_repo.enable_user(user_id)
+    return user

@@ -110,3 +110,37 @@ class UserRepository:
             await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)
+        
+    async def disable_user(self, user_id: int) -> User:
+    
+        try:
+            user = await self.get_user(user_id=user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+                
+            user.isdisabled = True
+            user.updated_at = datetime.now(timezone.utc)
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        except Exception as e:
+            await self.db.rollback()
+            tb_str = traceback.format_exc()
+            raise HTTPException(status_code=400, detail=f"Error disabling user: {str(e)}")
+
+    async def enable_user(self, user_id: int) -> User:
+        
+        try:
+            user = await self.get_user(user_id=user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+                
+            user.isdisabled = False
+            user.updated_at = datetime.now(timezone.utc)
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        except Exception as e:
+            await self.db.rollback()
+            tb_str = traceback.format_exc()
+            raise HTTPException(status_code=400, detail=f"Error enabling user: {str(e)}")
