@@ -35,8 +35,9 @@ class IdeaRepository:
         self.upload_dir.mkdir(parents=True,exist_ok=True)
     
     async def convert_file_to_bytes(self, file: UploadFile) -> bytes:
-        file_bytes = io.BytesIO(file.file.read())
-        return file_bytes
+        file_content = await file.read()
+        file_bytes_io = io.BytesIO(file_content)
+        return file_bytes_io.getvalue()
     
 
     async def _save_file(self, file: UploadFile) -> str:

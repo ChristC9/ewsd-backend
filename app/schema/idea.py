@@ -1,7 +1,6 @@
 from datetime import datetime
-from re import A
 from pydantic import BaseModel, Field
-from typing import Optional, ByteString, List, Any
+from typing import Optional, List, Dict, Any
 
 from app.schema.pagination import PaginationResponse, PaginationRequest
 from app.schema.category import CategoryBase
@@ -27,26 +26,22 @@ class IdeasListRequest(PaginationRequest):
     filter_reported: Optional[bool] = Field(None, alias="filter[reported]")
     filter_department: Optional[List[int]] = Field(None, alias="filter[department]")
 
-
-        
 class IdeaResponse(BaseModel):
     id: int
     title: str
-    description: Optional[str]
-    thumbnail: Optional[str]
+    description: Optional[str] = None
     likes_count: int
     dislikes_count: int
     comments_count: int
     reports_count: Optional[int] = 0
-    posted_by: dict
+    thumbnail: Optional[str] = None  # Will store Base64 encoded string
+    posted_by: Dict[str, Any]
     posted_on: datetime
-    category: CategoryBase
     department: DepartmentBase
-    files: Optional[List[FileResponse]] = None
+    category: CategoryBase
 
     class Config:
-        orm_mode = True
-
+        from_attributes = True
 
 class IdeaListResponse(BaseModel):
     data: list[IdeaResponse]
