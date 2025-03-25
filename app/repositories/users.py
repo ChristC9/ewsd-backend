@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from app.schema import pagination
 from app.schema.schema import UserCreate, UserListRequest
 from app.models.user_model import User
+from app.models.roles_model import Role
 from app.models.department_model import Department
 from app.models.idea_model import Idea
 from app.utils.helpers import compute_pagination
@@ -183,3 +184,19 @@ class UserRepository:
             await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=f"Error enabling user: {str(e)}")
+        
+
+    async def get_mails_by_role(self, role_name: str):
+        try:
+            query = (
+                select(User.email)
+                .join(Role, User.role_id == Role.id)
+                .where(Role.name == role_name)
+            )
+            result = await self.db.execute(query)
+            user_mails = result.unique().scalars().all()
+        
+            return user_mails
+        except Exception as e:
+            tb_str = traceback.format_exc()
+            raise HTTPException(status_code=400, detail=tb_str)

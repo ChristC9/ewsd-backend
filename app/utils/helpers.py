@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 import resend
 
 from app.config import settings
-# from app.services.mail import send_email
+from app.services.mail import send_email
 
 from app.schema.pagination import PaginationResponse
 
@@ -23,18 +23,10 @@ def generate_otp_code(length=6) -> str:
 
 
 def send_otp_email(to_email: str, otp_code: str):
-    resend.api_key = settings.RESEND_API_KEY
+    send_email([to_email], "Sending OTP Code", f"Here is OTP code <strong>{otp_code}</strong>")
 
-    params: resend.Emails.SendParams = {
-        "from": "onboarding@resend.dev",
-        "to": [f"{to_email}"],
-        "subject": "Sending OTP Code",
-        "html": f"Here is OTP code <strong>{otp_code}</strong>",
-    }
-
-    email = resend.Emails.send(params)
-    # send_email(to_email, "Sending OTP Code", f"Here is OTP code <strong>{otp_code}</strong>")
-
+def send_idea_submitted_email(to_emails, idea_title: str, user_name: str):
+    send_email(to_emails, "Idea Submitted", f"<strong>{user_name}</strong> sumbitted an idea with title: <strong>{idea_title}</strong>")
 
 def compute_pagination(total: int, page: int, limit: int) -> PaginationResponse:
     total_pages = (total + limit - 1) // limit
