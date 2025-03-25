@@ -1,19 +1,16 @@
-import re
 from fastapi import APIRouter, HTTPException,status,Depends, Query
 from fastapi import UploadFile, File, Form
 from typing import List, Annotated
 from fastapi.responses import StreamingResponse
-
+import base64
 
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.report_model import Report
 from app.repositories.ideas import IdeaRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
-from ..deps import get_current_user
 from app.schema import idea
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, FileResponse, IdeaReportCreate, ReportRequest
 from app.schema.category import CategoryBase
@@ -26,6 +23,8 @@ from io import StringIO
 
 
 router = APIRouter()
+
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 @has_permission(Permissions.CREATE_IDEA)
@@ -50,7 +49,29 @@ async def create_idea(
         raise HTTPException(status_code=400, detail=f"User account {posted_by} is disabled and cannot post ideas")
     
     idea_repo = IdeaRepository(db)
-    return await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)
+    new_idea = await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)
+    
+    # Create response dictionary
+    response_data = {
+        "id": new_idea.id,
+        "title": new_idea.title,
+        "description": new_idea.description,
+        "category_id": new_idea.categoryid,
+        "posted_by": new_idea.postedby,
+        "posted_on": new_idea.postedon,
+        "is_posted_anon": new_idea.ispostedanon,
+        "message": "Idea created successfully"
+    }
+    
+    # Add thumbnail as Base64 if it exists
+    if new_idea.thumbnail:
+        # Convert binary to Base64 string
+        thumbnail_base64 = base64.b64encode(new_idea.thumbnail).decode('utf-8')
+        response_data["thumbnail"] = thumbnail_base64
+    else:
+        response_data["thumbnail"] = None
+    
+    return response_data
 
 
 @router.get("/", response_model=IdeaListResponse)
@@ -67,6 +88,11 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
     ideas, pagination = await idea_repo.get_all_ideas(user_id=user_id, filter_params=query_params)
     data = []
     for item in ideas:
+
+        thumbnail_b64 = None
+        if item["idea"].thumbnail:
+            thumbnail_b64 = base64.b64encode(item["idea"].thumbnail).decode('utf-8')
+        
         idea_response = IdeaResponse(
             id = item["idea"].id,
             title = item["idea"].title,
@@ -75,7 +101,7 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
             dislikes_count = item["dislikes_count"],
             comments_count = item["comments_count"],
             reports_count = item["reports_count"],
-            thumbnail = item["idea"].thumbnail,
+            thumbnail =  thumbnail_b64,
             posted_by = {
                 "id": item["idea"].user.id,
                 "firstname": item["idea"].user.firstname,

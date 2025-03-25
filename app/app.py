@@ -4,6 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.config import settings
+from app.middleware.user_status import UserStatusMiddleware
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -15,7 +16,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
 )
-
+app.add_middleware(UserStatusMiddleware)
 # Set all CORS enabled origins
 # if settings.all_cors_origins:
 #     app.add_middleware(
