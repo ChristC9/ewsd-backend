@@ -1,35 +1,24 @@
-from mailersend import emails
 from app.config import settings
+# using SendGrid's Python Library
+# https://github.com/sendgrid/sendgrid-python
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+
 
 def send_email(to_email: str, subject: str, text_content: str):
-    mailer = emails.NewEmail(settings.MAILER_API_KEY)
-
-    # define an empty dict to populate with mail values
-    mail_body = {}
-
-    mail_from = {
-        "name": "Ewsd",
-        "email": "info@domain.com",
-    }
-
-    recipients = [
-        {
-            "name": "",
-            "email": to_email,
-        }
-    ]
-    reply_to = {
-        "name": "",
-        "email": to_email,
-    }
-
-
-    mailer.set_mail_from(mail_from, mail_body)
-    mailer.set_mail_to(recipients, mail_body)
-    mailer.set_subject(subject, mail_body)
-    mailer.set_html_content(text_content, mail_body)
-    mailer.set_reply_to(reply_to, mail_body)
-    # mailer.set_plaintext_content("This is the text content", mail_body)
-
-    # using print() will also return status code and data
-    mailer.send(mail_body)
+    message = Mail(
+        from_email='ta.thihaaungg@gmail.com',
+        to_emails=to_email,
+        subject=subject,
+        html_content=text_content
+    )
+    try:
+        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(e.message)
