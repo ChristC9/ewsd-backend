@@ -7,10 +7,10 @@ from sendgrid.helpers.mail import Mail
 
 
 
-def send_email(to_email: str, subject: str, text_content: str):
+def send_email(to_emails: list[str], subject: str, text_content: str):
     message = Mail(
         from_email='ta.thihaaungg@gmail.com',
-        to_emails=to_email,
+        to_emails=to_emails,
         subject=subject,
         html_content=text_content
     )

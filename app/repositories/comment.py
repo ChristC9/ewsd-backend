@@ -2,16 +2,16 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import date
 from uuid import UUID
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.comment_model import Comment
 from app.schema.comment import CommentCreate
 
 class CommentRepository:
-    def __init__(self, db: Session):
+
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    def create_comment(self, comment: CommentCreate,user_id: int) -> Comment:
-        """Create a new comment"""
+    async def create_comment(self, db:AsyncSession, comment: CommentCreate,user_id: int) -> Comment:
         db_comment = Comment(
             ideaid=comment.ideaid,
             comment=comment.comment,
@@ -19,9 +19,9 @@ class CommentRepository:
             postedon=date.today(),
             ispostedanon=comment.ispostedanon
         )
-        self.db.add(db_comment)
-        self.db.commit()
-        self.db.refresh(db_comment)
+        await db.add(db_comment)
+        await db.commit()
+        await db.refresh(db_comment)
         return db_comment
 
     def get_comment_by_id(self, comment_id: int) -> Optional[Comment]:

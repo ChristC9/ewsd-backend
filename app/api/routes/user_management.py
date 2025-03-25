@@ -1,25 +1,13 @@
-from ast import For
-from time import sleep
-import time
-from unittest import result
-from urllib import response
 from fastapi import Depends, HTTPException, APIRouter, status, Query
-from fastapi import security
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-
 from jose import jwt, JWTError
-from typing import Annotated, Optional
+from typing import Annotated
 from datetime import datetime, timezone, timedelta
 
-from app.api.deps import CurrentUser, OptionalCurrentUser
-from app.models.security import Otp
-from app.schema import pagination
-from app.schema.schema import UserCreate, UserLogin, Token, RefreshToken, UserResponse, UserListResponse, UserListRequest
+from app.api.deps import CurrentUser
+from app.schema.schema import UserCreate,Token, RefreshToken, UserResponse, UserListResponse, UserListRequest
 from app.schema.security import ForgetPasswordInitiateRequest, ResetPasswordRequest, OtpCreate, OtpUpdate
-from app.models.user_model import User as UserModel
 from app.repositories.users import UserRepository
 from app.repositories import (
     security as security_repo
@@ -214,3 +202,18 @@ async def reset_password(
     
     return {"detail": "Password reset successfully."}
 
+@router.patch("/{user_id}/disable", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def disable_user(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+
+    user_repo = UserRepository(db)
+    user = await user_repo.disable_user(user_id)
+    return user
+
+@router.patch("/{user_id}/enable", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def enable_user(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    
+    user_repo = UserRepository(db)
+    user = await user_repo.enable_user(user_id)
+    return user

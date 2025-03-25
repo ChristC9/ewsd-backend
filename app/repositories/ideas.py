@@ -35,8 +35,9 @@ class IdeaRepository:
         self.upload_dir.mkdir(parents=True,exist_ok=True)
     
     async def convert_file_to_bytes(self, file: UploadFile) -> bytes:
-        file_bytes = io.BytesIO(file.file.read())
-        return file_bytes
+        file_content = await file.read()
+        file_bytes_io = io.BytesIO(file_content)
+        return file_bytes_io.getvalue()
     
 
     async def _save_file(self, file: UploadFile) -> str:
@@ -103,7 +104,7 @@ class IdeaRepository:
     
 
     async def get_all_ideas(self, user_id: int, filter_params: IdeasListRequest):
-        # Subquery to count likes for each idea
+    # Subquery to count likes for each idea
         likes_count = (
             select(Like.ideaid, func.count(Like.id).label('likes_count'))
             .where(Like.isliked == True)
@@ -111,7 +112,7 @@ class IdeaRepository:
             .subquery()
         )
 
-        # Subquery to count dislikes for each idea
+    # Subquery to count dislikes for each idea
         dislikes_count = (
             select(Like.ideaid, func.count(Like.id).label('dislikes_count'))
             .where(Like.isliked == False)
@@ -143,6 +144,7 @@ class IdeaRepository:
             .join(User, Idea.postedby == User.id)
             .join(Department, User.department_id == Department.id)
             .where(Idea.isactived == True)
+            .where(User.isdisabled == False)  # Only show ideas from users who are not disabled
         )
 
         filters = [
@@ -191,6 +193,7 @@ class IdeaRepository:
             .join(User, Idea.postedby == User.id)
             .join(Department, User.department_id == Department.id)
             .where(Idea.isactived == True)
+            .where(User.isdisabled == False)  # Add this filter to the count query as well
         )
         for condition in filters:  
             if condition is not None:
@@ -203,7 +206,7 @@ class IdeaRepository:
 
 
     async def get_idea_by_id(self, idea_id: int)-> Idea:
-        
+    
         likes_count = (
             select(Like.ideaid, func.count(Like.id).label('likes_count'))
             .where(Like.isliked == True)
@@ -240,13 +243,16 @@ class IdeaRepository:
             .join(User, Idea.postedby == User.id)
             .join(Department, User.department_id == Department.id)
             .where(Idea.isactived == True)
+            .where(User.isdisabled == False)  # Only return ideas from users who are not disabled
             .where(Idea.id == idea_id)
         )
 
         result = await self.db.execute(query)
         row = result.unique().first()
+        
         if not row:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
+        
         idea_details = {
             "idea": row[0],
             "likes_count": row[1],

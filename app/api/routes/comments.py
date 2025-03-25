@@ -2,11 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.schema.comment import CommentCreate, CommentResponse
 from app.repositories.comment import CommentRepository
 from app.api.deps import get_db, get_current_user
 from app.models.user_model import User
+from app.models.comment_model import Comment
+
+from datetime import date
 
 router = APIRouter(
     # prefix="/comments",
@@ -17,20 +20,34 @@ router = APIRouter(
 @router.post("/", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_comment(
     comment_data: CommentCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
 
-    comment = CommentCreate(
-        ideaid=comment_data.ideaid,
-        comment=comment_data.comment,
-        ispostedanon=comment_data.ispostedanon
-    )
-    
-    comment_repo = CommentRepository(db)
-    
+   if current_user.isdisabled:
+         raise HTTPException(
+              status_code=status.HTTP_403_FORBIDDEN,
+              detail="You are not allowed to create a comment"
+         )
+   
+   try:
+        db_comment = Comment(
+            comment = comment_data.comment,
+            postedby = current_user.id,
+            ispostedanon = comment_data.ispostedanon,
+            postedon = date.today(),
+            ideaid = comment_data.ideaid
+        )
 
-    return await comment_repo.create_comment(comment, current_user.id)
+        db.add(db_comment)
+        await db.commit()
+        await db.refresh(db_comment)
+        return db_comment
+   except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to create comment"
+        )
 
 
 @router.put("/{comment_id}", response_model=CommentResponse)

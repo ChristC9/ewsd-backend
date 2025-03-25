@@ -1,16 +1,15 @@
-import re
-from fastapi import APIRouter, HTTPException,status,Depends, Query
+from fastapi import APIRouter, HTTPException,status,Depends, Query, BackgroundTasks
 from fastapi import UploadFile, File, Form
 from typing import List, Annotated
 from fastapi.responses import StreamingResponse
-
+import base64
 
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.report_model import Report
 from app.repositories.ideas import IdeaRepository
+from app.repositories.users import UserRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
 from app.schema import idea
@@ -18,6 +17,7 @@ from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, Fi
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase
 from app.models.user_model import User
+from app.utils.helpers import send_idea_submitted_email
 from sqlalchemy import select
 
 import csv
@@ -25,6 +25,8 @@ from io import StringIO
 
 
 router = APIRouter()
+
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 @has_permission(Permissions.CREATE_IDEA)
@@ -39,14 +41,50 @@ async def create_idea(
     files: List[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
-    
+    username = f"{current_user.firstname} {current_user.lastname}"
     user = await db.execute(select(User).where(User.id == posted_by))
     user = user.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail=f"User with ID {posted_by} not found")
     
+    if user.isdisabled:
+        raise HTTPException(status_code=400, detail=f"User account {posted_by} is disabled and cannot post ideas")
+    
     idea_repo = IdeaRepository(db)
-    return await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)
+    new_idea = await idea_repo.create_idea(title, description, posted_by, category_id, thumbnail, is_posted_anon, files)
+    
+    # Create response dictionary
+    response_data = {
+        "id": new_idea.id,
+        "title": new_idea.title,
+        "description": new_idea.description,
+        "category_id": new_idea.categoryid,
+        "posted_by": new_idea.postedby,
+        "posted_on": new_idea.postedon,
+        "is_posted_anon": new_idea.ispostedanon,
+        "message": "Idea created successfully"
+    }
+    
+    # Add thumbnail as Base64 if it exists
+    if new_idea.thumbnail:
+        # Convert binary to Base64 string
+        thumbnail_base64 = base64.b64encode(new_idea.thumbnail).decode('utf-8')
+        response_data["thumbnail"] = thumbnail_base64
+    else:
+        response_data["thumbnail"] = None
+    
+    userRepo = UserRepository(db)
+    qa_mails = await userRepo.get_mails_by_role("QAMANAGER")
+    send_idea_submitted_email(qa_mails, new_idea.title, username)
+    # Use BackgroundTasks to send email asynchronously
+    # background_tasks: BackgroundTasks = BackgroundTasks()
+    # background_tasks.add_task(
+    #     send_idea_submitted_email, 
+    #     qa_mails, 
+    #     idea_title=new_idea.title, 
+    #     user_name=username
+    # )
+    return response_data
 
 
 @router.get("/", response_model=IdeaListResponse)
@@ -63,6 +101,11 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
     ideas, pagination = await idea_repo.get_all_ideas(user_id=user_id, filter_params=query_params)
     data = []
     for item in ideas:
+
+        thumbnail_b64 = None
+        if item["idea"].thumbnail:
+            thumbnail_b64 = base64.b64encode(item["idea"].thumbnail).decode('utf-8')
+        
         idea_response = IdeaResponse(
             id = item["idea"].id,
             title = item["idea"].title,
@@ -71,7 +114,7 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
             dislikes_count = item["dislikes_count"],
             comments_count = item["comments_count"],
             reports_count = item["reports_count"],
-            thumbnail = item["idea"].thumbnail,
+            thumbnail =  thumbnail_b64,
             posted_by = {
                 "id": item["idea"].user.id,
                 "firstname": item["idea"].user.firstname,
