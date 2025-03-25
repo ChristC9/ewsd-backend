@@ -1,7 +1,4 @@
-import token
 from fastapi import APIRouter
-
-from app import api
 from app.api.routes import (
     user_management,
     roles,
