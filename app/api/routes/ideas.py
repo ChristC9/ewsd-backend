@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException,status,Depends, Query
+from fastapi import APIRouter, HTTPException,status,Depends, Query, BackgroundTasks
 from fastapi import UploadFile, File, Form
 from typing import List, Annotated
 from fastapi.responses import StreamingResponse
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.repositories.ideas import IdeaRepository
+from app.repositories.users import UserRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
 from app.schema import idea
@@ -16,6 +17,7 @@ from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, Fi
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase
 from app.models.user_model import User
+from app.utils.helpers import send_idea_submitted_email
 from sqlalchemy import select
 
 import csv
@@ -39,7 +41,7 @@ async def create_idea(
     files: List[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
-    
+    username = f"{current_user.firstname} {current_user.lastname}"
     user = await db.execute(select(User).where(User.id == posted_by))
     user = user.scalar_one_or_none()
     if not user:
@@ -71,6 +73,17 @@ async def create_idea(
     else:
         response_data["thumbnail"] = None
     
+    userRepo = UserRepository(db)
+    qa_mails = await userRepo.get_mails_by_role("QAMANAGER")
+    send_idea_submitted_email(qa_mails, new_idea.title, username)
+    # Use BackgroundTasks to send email asynchronously
+    # background_tasks: BackgroundTasks = BackgroundTasks()
+    # background_tasks.add_task(
+    #     send_idea_submitted_email, 
+    #     qa_mails, 
+    #     idea_title=new_idea.title, 
+    #     user_name=username
+    # )
     return response_data
 
 
