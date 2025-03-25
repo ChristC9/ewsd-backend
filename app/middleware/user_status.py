@@ -45,7 +45,7 @@ class UserStatusMiddleware(BaseHTTPMiddleware):
                 user_repo = UserRepository(db)
                 user = await user_repo.get_user(username=username)
             
-                if user and not user.is_active:
+                if user and user.isdisabled:
                     return JSONResponse(
                         status_code=status.HTTP_403_FORBIDDEN,
                         content={
