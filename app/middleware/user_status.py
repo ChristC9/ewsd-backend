@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
-from app.database import get_db
+from app.database import get_db, AsyncSessionLocal
 from app.repositories.users import UserRepository
 
 class UserStatusMiddleware(BaseHTTPMiddleware):
@@ -39,14 +39,13 @@ class UserStatusMiddleware(BaseHTTPMiddleware):
             if not username:
                 return await call_next(request)
                 
-            # Get a database session
-            db = next(get_db())
-            try:
-                # Check if user is disabled
+            # Get a async database 
+            # Check if user is disabled
+            async with AsyncSessionLocal() as db:
                 user_repo = UserRepository(db)
                 user = await user_repo.get_user(username=username)
-                
-                if user and not user.is_active:
+            
+                if user and user.isdisabled:
                     return JSONResponse(
                         status_code=status.HTTP_403_FORBIDDEN,
                         content={
@@ -54,9 +53,7 @@ class UserStatusMiddleware(BaseHTTPMiddleware):
                         },
                         headers={"WWW-Authenticate": "Bearer"}
                     )
-            finally:
-                db.close()
-        
+
         except JWTError:
             # If token is invalid, let the request handlers deal with it
             pass
