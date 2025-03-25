@@ -186,12 +186,13 @@ class UserRepository:
             raise HTTPException(status_code=400, detail=f"Error enabling user: {str(e)}")
         
 
-    async def get_mails_by_role(self, role_name: str):
+    async def get_mails_by_role(self, role_name: str, department_id: int = None) -> list[str]:
         try:
             query = (
                 select(User.email)
                 .join(Role, User.role_id == Role.id)
-                .where(Role.name == role_name)
+                .join(Department, User.department_id == Department.id)
+                .where(Role.name == role_name and Department.id == department_id)
             )
             result = await self.db.execute(query)
             user_mails = result.unique().scalars().all()
