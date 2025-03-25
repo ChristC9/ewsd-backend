@@ -25,6 +25,7 @@ def generate_otp_code(length=6) -> str:
 def send_otp_email(to_email: str, otp_code: str):
     send_email([to_email], "Sending OTP Code", f"Here is OTP code <strong>{otp_code}</strong>")
 
+
 def send_idea_submitted_email(to_emails, idea_title: str, user_name: str):
     send_email(to_emails, "Idea Submitted", f"<strong>{user_name}</strong> sumbitted an idea with title: <strong>{idea_title}</strong>")
 
