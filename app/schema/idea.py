@@ -21,6 +21,7 @@ class IdeasListRequest(PaginationRequest):
     sort_by_date: Optional[int] = Field(None, alias="sort[date]")
     sort_by_likes: Optional[int] = Field(None, alias="sort[likes]")
     sort_by_popularity: Optional[int] = Field(None, alias="sort[popularity]")
+    sort_by_most_viewed: Optional[int] = Field(None, alias="sort[most_viewed]")
     search: Optional[str] = Field(None)
     filter_my: Optional[bool] = Field(None, alias="filter[my]")
     filter_reported: Optional[bool] = Field(None, alias="filter[reported]")
@@ -33,8 +34,9 @@ class IdeaResponse(BaseModel):
     likes_count: int
     dislikes_count: int
     comments_count: int
+    views_count: int
     reports_count: Optional[int] = 0
-    thumbnail: Optional[str] = None  # Will store Base64 encoded string
+    thumbnail: Optional[Any] = None  # Will store Base64 encoded string
     posted_by: Dict[str, Any]
     posted_on: datetime
     department: DepartmentBase

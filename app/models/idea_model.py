@@ -1,3 +1,4 @@
+from annotated_types import T
 from sqlalchemy import Column, Integer, String, Date, Boolean, LargeBinary, UUID, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -12,6 +13,7 @@ class Idea(CommonBase):
     title = Column(String(255), nullable=False)
     description = Column(String, nullable=True)
     thumbnail = Column(LargeBinary, nullable=True)  # Changed to String to store file path
+    views_count = Column(Integer, default=0, nullable=True)
     postedby = Column(Integer, ForeignKey('users.id'), nullable=False)
     postedon = Column(Date, nullable=False)
     ispostedanon = Column(Boolean, default=False, nullable=False)

@@ -165,7 +165,8 @@ class IdeaRepository:
         sort_params = [
             (likes_count.c.likes_count, filter_params.sort_by_likes),
             (Idea.created_at, filter_params.sort_by_date),
-            (popularity_score, filter_params.sort_by_popularity)
+            (popularity_score, filter_params.sort_by_popularity),
+            (Idea.views_count, filter_params.sort_by_most_viewed),
         ]
 
         for field, order in sort_params:
@@ -346,7 +347,21 @@ class IdeaRepository:
         return f"Report id {report_id} is deleted successfully"
         
 
+    async def update_idea_views_count(self, idea_id: int):
+        query = (
+            select(Idea)
+            .where(Idea.id == idea_id)
+        )
+        result = await self.db.execute(query)
+        idea = result.unique().scalar_one_or_none()
         
+        if not idea:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
+        
+        idea.views_count = idea.views_count + 1
+        await self.db.commit()
+        await self.db.refresh(idea)
+        return idea
 
         
        

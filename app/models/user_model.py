@@ -18,7 +18,7 @@ class User(CommonBase):
     password = Column(String(255))
     isdisabled = Column(Boolean, default=False)
     islocked = Column(Boolean, default=False)
-    lastlogin = Column(DateTime(timezone=True),nullable=False,server_default=func.now())
+    lastlogin = Column(DateTime(timezone=True),nullable=True)
     role_id = Column(Integer, ForeignKey('roles.id'))
     department_id = Column(Integer, ForeignKey('departments.id'))
 
