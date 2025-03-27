@@ -15,7 +15,7 @@ from app.api.deps import CurrentUser
 from app.schema import idea
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, FileResponse, IdeaReportCreate, ReportRequest
 from app.schema.category import CategoryBase
-from app.schema.schema import DepartmentBase
+from app.schema.schema import DepartmentBase, IdeaUpdate
 from app.models.user_model import User
 from app.utils.helpers import send_idea_submitted_email
 from sqlalchemy import select
@@ -202,7 +202,7 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
 
 @router.put('/{idea_id}', response_model=IdeaResponse)
 # @has_permission(Permissions.UPDATE_IDEA)
-async def update_idea(idea_id: int, idea_data: IdeasListRequest, current_user: CurrentUser, db: Session = Depends(get_db)):
+async def update_idea(idea_id: int, idea_data: IdeaUpdate, current_user: CurrentUser, db: Session = Depends(get_db)):
     idea_repo = IdeaRepository(db)
     return await idea_repo.update_idea(idea_id, idea_data)
 
