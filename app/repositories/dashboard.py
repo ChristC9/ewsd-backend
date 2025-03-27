@@ -7,6 +7,8 @@ from sqlalchemy import select, func
 
 from datetime import datetime,timezone
 
+from sqlmodel import distinct
+
 from app.models.idea_model import Idea
 from app.models.user_model import User
 from app.models.department_model import Department
@@ -63,7 +65,7 @@ class DashboardRepository:
         stmt = (
             select(
                 Department.name,
-                func.count(User.id).label('count')
+                func.count(distinct(User.id)).label('count')
             )
             .join(
                 User, Department.id == User.department_id

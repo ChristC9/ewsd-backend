@@ -114,6 +114,7 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
             likes_count = item["likes_count"],
             dislikes_count = item["dislikes_count"],
             comments_count = item["comments_count"],
+            views_count= item["idea"].views_count,
             reports_count = item["reports_count"],
             thumbnail =  thumbnail_b64,
             posted_by = {
@@ -165,6 +166,7 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
             likes_count = item["likes_count"],
             dislikes_count = item["dislikes_count"],
             comments_count = item["comments_count"],
+            views_count = item["idea"].views_count,
             reports_count = item["reports_count"],  
             thumbnail = item["idea"].thumbnail,
             posted_by = {
@@ -197,6 +199,9 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
             ) for file in item["idea"].files]
             if item["idea"].files else []   
         )
+    
+    # Update the views count
+    await idea_repo.update_idea_views_count(idea_id)
     return idea_response
 
 
@@ -259,6 +264,14 @@ async def export_ideas_csv(
         headers={"Content-Disposition": "attachment;filename=ideas_export.csv"}
     )
     
+# @router.get("/export/files")
+# async def export_idea_files(idea_id: int, db: AsyncSession = Depends(get_db)):
+#     """
+#     Export all idea files as zip file
+#     """
+#     idea_repo = IdeaRepository(db)
+    
+
 
 @router.get("/{idea_id}/reports", status_code=status.HTTP_200_OK)
 async def get_all_idea_reports(idea_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):

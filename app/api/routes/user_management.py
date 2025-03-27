@@ -77,6 +77,10 @@ async def login(credentials: Annotated[OAuth2PasswordRequestForm, Depends()], db
     access_token = get_access_token(user)
     refresh_token = get_refresh_token(user)
 
+    # update lastlogin
+    user.lastlogin = datetime.now(timezone.utc)
+    await db.commit()
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
