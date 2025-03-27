@@ -21,7 +21,9 @@ from app.utils.helpers import send_idea_submitted_email
 from sqlalchemy import select
 
 import csv
-from io import StringIO
+from io import StringIO, BytesIO
+import zipfile
+from pathlib import Path
 
 
 router = APIRouter()
@@ -263,14 +265,67 @@ async def export_ideas_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment;filename=ideas_export.csv"}
     )
+
     
-# @router.get("/export/files")
-# async def export_idea_files(idea_id: int, db: AsyncSession = Depends(get_db)):
-#     """
-#     Export all idea files as zip file
-#     """
-#     idea_repo = IdeaRepository(db)
+@router.get("/files/download")
+async def download_multiple_ideas_files(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Download files from multiple ideas as a ZIP file
+    """
+    idea_repo = IdeaRepository(db)
+    idea_ids = await idea_repo.get_all_ideas_ids()
     
+    # Create in-memory zip file
+    zip_io = BytesIO()
+    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
+        files_found = False
+        for idea_id in idea_ids:
+            try:
+                idea = await idea_repo.get_raw_idea_by_id(idea_id)
+                if not idea:
+                    print(f"Idea {idea_id} not found")
+                
+                if not idea.files:
+                    print(f"Idea {idea.id} has no files")
+                    continue
+                    
+                for file in idea.files:
+                    # Create full path relative to the project root
+                    # print(f"Processing file: {file.filename}, location: {file.filelocation}")
+                    file_path = Path(__file__).parents[3] / file.filelocation
+                    if file_path.exists():
+                        # print(f"File exists at {file_path}")
+                        # Create clear directory structure with idea title
+                        safe_title = "".join(c for c in idea.title if c.isalnum() or c in " _-").strip()
+                        safe_title = safe_title.replace(" ", "_")[:50]  # Limit length and replace spaces
+                        archive_path = f"idea_{idea.id}_{safe_title}/{file.filename}"
+                        zip_file.write(file_path, arcname=archive_path)
+                        files_found = True
+                    # else:
+                    #     print(f"File does not exist at {file_path}")
+            except Exception as e:
+                # Log any errors
+                print(f"Error processing idea {idea_id}: {str(e)}")
+                pass
+                
+        if not files_found:
+            # Add a readme file if no files were found
+            zip_file.writestr("README.txt", "No files were found for the selected ideas.")
+    
+    # Reset file pointer
+    zip_io.seek(0)
+    
+    # Return the zip file as a streaming response
+    return StreamingResponse(
+        zip_io,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename=ideas_files.zip"
+        }
+    )
 
 
 @router.get("/{idea_id}/reports", status_code=status.HTTP_200_OK)
