@@ -206,6 +206,17 @@ class IdeaRepository:
         return ideas_with_counts, pagination
 
 
+    async def get_all_ideas_ids(self):
+        query = (
+            select(Idea.id)
+            .where(Idea.isactived == True)
+        )
+
+        result = await self.db.execute(query)
+        ideas_ids = result.scalars().all()
+        return ideas_ids
+    
+
     async def get_idea_by_id(self, idea_id: int)-> Idea:
     
         likes_count = (
@@ -364,5 +375,14 @@ class IdeaRepository:
         return idea
 
         
+    async def get_raw_idea_by_id(self, idea_id: int):
+        query = (
+            select(Idea)
+            .where(Idea.id == idea_id)
+        )
+        result = await self.db.execute(query)
+        idea = result.unique().scalar_one_or_none()
+        
+        return idea
        
 
