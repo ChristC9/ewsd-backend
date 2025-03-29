@@ -12,11 +12,12 @@ from app.repositories.ideas import IdeaRepository
 from app.repositories.users import UserRepository
 from app.auth.permissions import Permissions, has_permission
 from app.api.deps import CurrentUser
-from app.schema import idea
+from app.schema.comment import CommentResponse
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, FileResponse, IdeaReportCreate, ReportRequest
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase, IdeaUpdate
 from app.models.user_model import User
+from app.models.comment_model import Comment
 from app.utils.helpers import send_idea_submitted_email
 from sqlalchemy import select
 
@@ -95,7 +96,7 @@ async def create_idea(
 async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], current_user: CurrentUser, db: Session = Depends(get_db)):
     user_id = current_user.id
     # check if user is admin
-    if current_user.role.name in ["ADMIN", "QA MANAGER"]:
+    if current_user.role.name in ["ADMIN", "QA_MANAGER"]:
         show_anoymous_users = True
     else:
         show_anoymous_users = False
@@ -155,12 +156,56 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
 # @has_permission(Permissions.READ_IDEA)
 async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
     # check if user is admin
-    if current_user.role.name in ["ADMIN", "QA MANAGER"]:
+    if current_user.role.name in ["ADMIN", "QA_MANAGER"]:
         show_anoymous_users = True
     else:
         show_anoymous_users = False
+    
     idea_repo = IdeaRepository(db)
     item = await idea_repo.get_idea_by_id(idea_id)
+    
+    # Convert thumbnail to base64 if it exists
+    thumbnail_b64 = None
+    if item["idea"].thumbnail:
+        thumbnail_b64 = base64.b64encode(item["idea"].thumbnail).decode('utf-8')
+    
+    # Get comments for this idea
+    comments_query = (
+        select(Comment)
+        .where(Comment.ideaid == idea_id)
+        .order_by(Comment.postedon.desc())  # Most recent comments first
+    )
+    comments_result = await db.execute(comments_query)
+    comments = comments_result.scalars().all()
+    
+    # Format comments for the response
+    comments_response = []
+    for comment in comments:
+        # Get the user who posted the comment
+        user_query = select(User).where(User.id == comment.postedby)
+        user_result = await db.execute(user_query)
+        user = user_result.scalar_one_or_none()
+        
+        # Determine username based on anonymity settings
+        username = None
+        if user and (not comment.ispostedanon or show_anoymous_users):
+            username = f"{user.firstname} {user.lastname}"
+        elif comment.ispostedanon:
+            username = "Anonymous User"
+            
+        # Create CommentResponse object, matching your schema
+        comment_response = CommentResponse(
+            id=comment.id,
+            commentuid=comment.commentuid,
+            comment=comment.comment,
+            ideaid=comment.ideaid,
+            postedby=comment.postedby,
+            postedon=comment.postedon,
+            ispostedanon=comment.ispostedanon,
+            username=username
+        )
+        comments_response.append(comment_response)
+    
     idea_response = IdeaResponse(
             id = item["idea"].id,
             title = item["idea"].title,
@@ -170,7 +215,7 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
             comments_count = item["comments_count"],
             views_count = item["idea"].views_count,
             reports_count = item["reports_count"],  
-            thumbnail = item["idea"].thumbnail,
+            thumbnail = thumbnail_b64,
             posted_by = {
                 "id": item["idea"].user.id,
                 "firstname": item["idea"].user.firstname,
@@ -199,7 +244,8 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
                 filename = file.filename,
                 filetype = file.filetype
             ) for file in item["idea"].files]
-            if item["idea"].files else []   
+            if item["idea"].files else [],
+            comments = comments_response
         )
     
     # Update the views count
@@ -209,16 +255,89 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
 
 @router.put('/{idea_id}', response_model=IdeaResponse)
 # @has_permission(Permissions.UPDATE_IDEA)
-async def update_idea(idea_id: int, idea_data: IdeaUpdate, current_user: CurrentUser, db: Session = Depends(get_db)):
+async def update_idea(
+    idea_id: int,
+    current_user: CurrentUser,
+    title: str = Form(...),
+    description: str = Form(None),
+    category_id: int = Form(...),
+    thumbnail: UploadFile = File(None),
+    is_posted_anon: bool = Form(False),
+    files: List[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    # Check if the user has permission to update this idea
+    # You might want to add permission checks here
+    
     idea_repo = IdeaRepository(db)
-    return await idea_repo.update_idea(idea_id, idea_data)
+    
+    # Update the idea
+    await idea_repo.update_idea(
+        idea_id=idea_id,
+        title=title,
+        description=description,
+        category_id=category_id,
+        thumbnail=thumbnail,
+        is_posted_anon=is_posted_anon,
+        files=files
+    )
+    
+    # Get the updated idea details
+    idea_details = await idea_repo.get_idea_by_id(idea_id)
+    
+    # Format the response
+    # Convert thumbnail to base64 if it exists
+    thumbnail_b64 = None
+    if idea_details["idea"].thumbnail:
+        thumbnail_b64 = base64.b64encode(idea_details["idea"].thumbnail).decode('utf-8')
+    
+    # Check if user is admin
+    show_anonymous_users = current_user.role.name in ["ADMIN", "QA MANAGER"]
+    
+    # Build the response object
+    idea_response = IdeaResponse(
+        id=idea_details["idea"].id,
+        title=idea_details["idea"].title,
+        description=idea_details["idea"].description,
+        likes_count=idea_details["likes_count"],
+        dislikes_count=idea_details["dislikes_count"],
+        comments_count=idea_details["comments_count"],
+        views_count=idea_details["idea"].views_count,
+        reports_count=idea_details["reports_count"],  
+        thumbnail=thumbnail_b64,
+        posted_by={
+            "id": idea_details["idea"].user.id,
+            "firstname": idea_details["idea"].user.firstname,
+            "lastname": idea_details["idea"].user.lastname,
+        } if not idea_details["idea"].ispostedanon or show_anonymous_users else {
+            "id": None,
+            "firstname": "Anonymous",
+            "lastname": "User",
+        },
+        posted_on=idea_details["idea"].created_at,
+        department=DepartmentBase(
+            id=idea_details["department"].id,
+            name=idea_details["department"].name,
+            created_by=idea_details["department"].created_by,
+            created_at=idea_details["department"].created_at,
+            updated_at=idea_details["department"].updated_at,
+        ),
+        category=CategoryBase(
+            id=idea_details["idea"].category.categoryid,
+            name=idea_details["idea"].category.categoryname,
+            created_by=idea_details["idea"].category.created_by,
+            created_at=idea_details["idea"].category.created_at,
+        )
+    )
+    
+    return idea_response
 
 
 @router.delete('/{idea_id}', status_code=status.HTTP_204_NO_CONTENT)
 # @has_permission(Permissions.DELETE_IDEA)
-async def delete_idea(idea_id: int, current_user: CurrentUser, db: Session = Depends(get_db)):
+async def delete_idea(idea_id: int,db: Session = Depends(get_db)):
     idea_repo = IdeaRepository(db)
-    return await idea_repo.delete_idea(idea_id)
+    return await idea_repo.delete_idea(int(idea_id))
 
 
 @router.get("/export/csv", status_code=status.HTTP_200_OK)
