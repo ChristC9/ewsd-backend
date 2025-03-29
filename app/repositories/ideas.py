@@ -264,49 +264,88 @@ class IdeaRepository:
         
         if not row:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
-        
+
         idea_details = {
             "idea": row[0],
             "likes_count": row[1],
             "dislikes_count": row[2], 
             "comments_count": row[3],
             "department": row[4],
-            "reports_count": len(row[0].reports)
+            "reports_count": len(row[0].reports),
+            # "comments": comments
         }
 
         return idea_details
 
 
-    async def update_idea(self, idea_id: int, title: str, description: str, category_id: int, thumbnail: UploadFile = None, is_posted_anon: bool = False, files: List[UploadFile] = None) -> Idea:
+    async def update_idea(self, 
+                    idea_id: int, 
+                    title: str,
+                    description: str,
+                    category_id: int,
+                    thumbnail: UploadFile = None,
+                    is_posted_anon: bool = False,
+                    files: List[UploadFile] = None) -> Idea:
+    
+        # First, verify the idea exists
+        result = await self.db.execute(select(Idea).where(Idea.id == idea_id))
+        idea = result.scalar_one_or_none()
         
-        idea = await self.get_idea_by_id(idea_id)
+        if not idea:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Idea with ID {idea_id} not found")
         
+        # Check if category exists
+        category = await self.db.execute(select(Department).where(Department.id == category_id))
+        if not category:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Category with ID {category_id} not found")
+        
+        # Update basic fields
         idea.title = title
         idea.description = description
         idea.categoryid = category_id
-        idea.thumbnail = thumbnail
         idea.ispostedanon = is_posted_anon
-
+        
+        # Handle thumbnail update
+        if thumbnail:
+            try:
+                thumbnail_bytes = await self.convert_file_to_bytes(thumbnail)
+                idea.thumbnail = thumbnail_bytes
+            except Exception as e:
+                print(f"Error processing thumbnail: {str(e)}")
+                # Don't update the thumbnail if there's an error
+        
+        # Add new files if provided
         if files:
             for file in files:
-                file_location = await self._save_file(file)
-                
-                new_file = File(
-                    ideaid=idea_id,
-                    filename=file.filename,
-                    filelocation=file_location,  # Store the actual file path
-                    filetype=file.content_type
-                )
-                self.db.add(new_file)
-
+                try:
+                    file_location = await self._save_file(file)
+                    
+                    new_file = File(
+                        ideaid=idea_id,
+                        filename=file.filename,
+                        filelocation=file_location,
+                        filetype=file.content_type
+                    )
+                    self.db.add(new_file)
+                except Exception as e:
+                    print(f"Error processing file {file.filename}: {str(e)}")
+                    # Continue with other files
+        
+        # Save changes
         await self.db.commit()
         await self.db.refresh(idea)
+        
         return idea
     
     async def delete_idea(self, idea_id: int) -> Idea:
         
-        idea = await self.get_idea_by_id(idea_id)
+        # idea = await self.get_idea_by_id(idea_id)
+        idea = await self.db.execute(select(Idea).where(Idea.id == idea_id))
+        idea = idea.scalar_one_or_none()
+        if not idea:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
         await self.db.delete(idea)
+        await self.db.commit()
         return {"message": f"Idea id {idea_id} is deleted successfully"}
 
 

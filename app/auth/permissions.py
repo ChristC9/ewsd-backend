@@ -86,9 +86,9 @@ def has_permission(required_permission: Permissions):
 
             user_role = current_user.role.name
 
-            if user_role == "QA Manager":
+            if user_role == "QA_MANAGER":
                 roles_permissions = RolePermissions.QA_MANAGER
-            elif user_role == "QA Staff":
+            elif user_role == "QA_STAFF":
                 roles_permissions = RolePermissions.QA_STAFF
             else:
                 roles_permissions = RolePermissions.ADMIN

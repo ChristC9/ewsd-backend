@@ -5,6 +5,7 @@ from typing import Optional, List, Dict, Any
 from app.schema.pagination import PaginationResponse, PaginationRequest
 from app.schema.category import CategoryBase
 from app.schema.schema import DepartmentBase
+from app.schema.comment import CommentResponse
 
 
 class FileResponse(BaseModel):
@@ -41,6 +42,7 @@ class IdeaResponse(BaseModel):
     posted_on: datetime
     department: DepartmentBase
     category: CategoryBase
+    comments: List[CommentResponse] = []
 
     class Config:
         from_attributes = True

@@ -60,7 +60,7 @@ async def get_current_active_user(
 async def get_current_qa_manager(
     current_user: UserModel = Depends(get_current_active_user)
 ) -> UserModel:
-    if current_user.role.name != "QA Manager":
+    if current_user.role.name != "QA_MANAGER":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="QA Manager access required"
