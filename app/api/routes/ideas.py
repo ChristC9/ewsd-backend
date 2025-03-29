@@ -15,7 +15,7 @@ from app.api.deps import CurrentUser
 from app.schema.comment import CommentResponse
 from app.schema.idea import IdeaListResponse, IdeasListRequest, IdeaResponse, FileResponse, IdeaReportCreate, ReportRequest
 from app.schema.category import CategoryBase
-from app.schema.schema import DepartmentBase, IdeaUpdate
+from app.schema.schema import DepartmentBase
 from app.models.user_model import User
 from app.models.comment_model import Comment
 from app.utils.helpers import send_idea_submitted_email
@@ -76,8 +76,8 @@ async def create_idea(
     else:
         response_data["thumbnail"] = None
     
-    userRepo = UserRepository(db)
-    qa_mails = await userRepo.get_mails_by_role("QACOORDINATOR", current_user.department_id)
+    user_repo = UserRepository(db)
+    qa_mails = await user_repo.get_mails_by_role("QACOORDINATOR", current_user.department_id)
     print(qa_mails)
     send_idea_submitted_email(qa_mails, new_idea.title, username)
     # Use BackgroundTasks to send email asynchronously
@@ -412,23 +412,17 @@ async def download_multiple_ideas_files(
                     continue
                     
                 for file in idea.files:
-                    # Create full path relative to the project root
-                    # print(f"Processing file: {file.filename}, location: {file.filelocation}")
                     file_path = Path(__file__).parents[3] / file.filelocation
                     if file_path.exists():
-                        # print(f"File exists at {file_path}")
-                        # Create clear directory structure with idea title
                         safe_title = "".join(c for c in idea.title if c.isalnum() or c in " _-").strip()
                         safe_title = safe_title.replace(" ", "_")[:50]  # Limit length and replace spaces
                         archive_path = f"idea_{idea.id}_{safe_title}/{file.filename}"
                         zip_file.write(file_path, arcname=archive_path)
                         files_found = True
-                    # else:
-                    #     print(f"File does not exist at {file_path}")
             except Exception as e:
                 # Log any errors
                 print(f"Error processing idea {idea_id}: {str(e)}")
-                pass
+
                 
         if not files_found:
             # Add a readme file if no files were found
@@ -442,7 +436,7 @@ async def download_multiple_ideas_files(
         zip_io,
         media_type="application/zip",
         headers={
-            "Content-Disposition": f"attachment; filename=ideas_files.zip"
+            "Content-Disposition": "attachment; filename=ideas_files.zip"
         }
     )
 
@@ -451,14 +445,14 @@ async def download_multiple_ideas_files(
 async def get_all_idea_reports(idea_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     idea_repo = IdeaRepository(db)
     reports = await idea_repo.get_idea_reports(idea_id)
-    reportsResponse = [report.to_dict() for report in reports]
-    return reportsResponse
+    reports_response = [report.to_dict() for report in reports]
+    return reports_response
     
 
 @router.post("/{idea_id}/reports")
 async def report_idea(
     idea_id: int, 
-    reportRequest: ReportRequest, 
+    report_request: ReportRequest, 
     current_user: CurrentUser, 
     db: AsyncSession = Depends(get_db)
 ):
@@ -467,7 +461,7 @@ async def report_idea(
     report_data = IdeaReportCreate(
         user_id = current_user.id,
         idea_id = idea_id,
-        reason = reportRequest.reason
+        reason = report_request.reason
     )
     await idea_repo.report_idea(report_data)
     return {"detail": "Idea reported successfully"}
@@ -478,5 +472,3 @@ async def delete_idea_report(idea_id: int, report_id: int, current_user: Current
     idea_repo = IdeaRepository(db)
     message = await idea_repo.delete_report_idea(report_id)
     return {"detail": message}
-    
-

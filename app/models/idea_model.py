@@ -7,6 +7,7 @@ from app.models.base import CommonBase, generate_uuid
 
 class Idea(CommonBase):
     __tablename__ = 'tblideas'
+    CASCADE_ALL_DELETE_ORPHAN = "all, delete-orphan"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     ideaguid = Column(UUID(as_uuid=True), default=generate_uuid, unique=True, nullable=False)
@@ -20,10 +21,9 @@ class Idea(CommonBase):
     isactived = Column(Boolean, default=True, nullable=False)
     isreported = Column(Boolean, default=False)
     categoryid = Column(Integer, ForeignKey('tblcategories.categoryid'), nullable=False)
-
     user = relationship("User", lazy="selectin")
-    files = relationship("File", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
-    comments = relationship("Comment", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
-    likes = relationship("Like", back_populates="idea", cascade="all, delete-orphan", lazy="selectin")
+    files = relationship("File", back_populates="idea", cascade=CASCADE_ALL_DELETE_ORPHAN, lazy="selectin")
+    comments = relationship("Comment", back_populates="idea", cascade=CASCADE_ALL_DELETE_ORPHAN, lazy="selectin")
+    likes = relationship("Like", back_populates="idea", cascade=CASCADE_ALL_DELETE_ORPHAN, lazy="selectin")
     category = relationship("Category", lazy="selectin")
     reports = relationship("Report", lazy="selectin")
