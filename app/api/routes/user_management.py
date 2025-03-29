@@ -26,6 +26,7 @@ algorithm = settings.ALGORITHM
 
 router = APIRouter()
 token_router = APIRouter()
+detail_message = "User not found"
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -42,9 +43,9 @@ async def get_current_user_info(current_user: CurrentUser):
 async def read_user(current_user: CurrentUser, user_id: int, db: AsyncSession = Depends(get_db)):
 
     user_repo = UserRepository(db)
-    user = await user_repo.get_user(user_id)
+    user = await user_repo.get_user(user_id=user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail=detail_message)
     return user
 
 
@@ -110,7 +111,7 @@ async def refresh_token(
         if not user:
             raise HTTPException(
                 status_code=401,
-                detail="User not found",
+                detail=detail_message,
                 headers={"WWW-Authenticate": "Bearer"}
             )
             
@@ -147,14 +148,14 @@ async def delete_user(user_id: int, current_user: CurrentUser, db: AsyncSession 
 
 @router.post("/forget-password/initiate")
 async def initiate_password_reset(
-    initiateRequest: ForgetPasswordInitiateRequest,
+    initiate_request: ForgetPasswordInitiateRequest,
     db: AsyncSession = Depends(get_db),
 ):
     user_repo = UserRepository(db)
     # get user
-    user = await user_repo.get_user(email=initiateRequest.email)
+    user = await user_repo.get_user(email=initiate_request.email)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail=detail_message)
     
     # generate otp
     otp_code = generate_otp_code(length=6)
@@ -163,28 +164,27 @@ async def initiate_password_reset(
     # save otp to db
     otp_data_object = await security_repo.get_otp(db, user.id, is_used=False)
     if otp_data_object:
-        otpUpdate = OtpUpdate(otp=otp_code, expires_at=expire_at, is_used=False)
-        otp = await security_repo.update_otp_by_model(db, otpUpdate, otp_data_object)
+        otp_update = OtpUpdate(otp=otp_code, expires_at=expire_at, is_used=False)
+        await security_repo.update_otp_by_model(db, otp_update, otp_data_object)
     else:
-        otpCreate = OtpCreate(user_id=user.id, otp=otp_code, expires_at=expire_at)
-        otp = await security_repo.create_otp(db, otpCreate)
+        otp_create = OtpCreate(user_id=user.id, otp=otp_code, expires_at=expire_at)
+        await security_repo.create_otp(db, otp_create)
     
     # send otp to user
-    # TODO: send otp to user
-    send_otp_email(to_email=initiateRequest.email, otp_code=otp_code)
-    return {"detail": f"OTP sent successfully to {initiateRequest.email}"}
+    send_otp_email(to_email=initiate_request.email, otp_code=otp_code)
+    return {"detail": f"OTP sent successfully to {initiate_request.email}"}
 
 
 @router.post("/forget-password/reset")
 async def reset_password(
-    resetRequest: ResetPasswordRequest,
+    reset_request: ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):
     # get user
     user_repo = UserRepository(db)
-    user = await user_repo.get_user(email=resetRequest.email)
+    user = await user_repo.get_user(email=reset_request.email)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail=detail_message)
     
     user_id = user.id
     
@@ -194,15 +194,15 @@ async def reset_password(
         raise HTTPException(status_code=404, detail="OTP not found")
     
     # validate otp
-    if otp_data_object.colotp != resetRequest.otp_code:
+    if otp_data_object.colotp != reset_request.otp_code:
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     # mark otp as used
-    otpUpdate = OtpUpdate(is_used=True)
-    await security_repo.update_otp_by_model(db, otpUpdate, otp_data_object)
+    otp_update = OtpUpdate(is_used=True)
+    await security_repo.update_otp_by_model(db, otp_update, otp_data_object)
 
     # update password
-    await user_repo.update_user_password(user_id, resetRequest.new_password)
+    await user_repo.update_user_password(user_id, reset_request.new_password)
     
     return {"detail": "Password reset successfully."}
 

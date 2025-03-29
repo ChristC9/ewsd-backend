@@ -2,19 +2,14 @@ from calendar import c
 from fastapi import HTTPException,status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 import bcrypt
 import traceback
-
 from datetime import datetime, timezone
-
-from app.schema import pagination
 from app.schema.schema import UserCreate, UserListRequest
 from app.models.user_model import User
 from app.models.roles_model import Role
 from app.models.department_model import Department
-from app.models.idea_model import Idea
 from app.utils.helpers import compute_pagination
 
 
@@ -24,7 +19,8 @@ class UserRepository:
         self.db = db
 
 
-    async def get_user(self, *, username: str = None, user_id: int = None, email: str = None) -> User:
+    async def get_user(self,username: str = None, user_id: int = None, email: str = None) -> User:
+
         if username is not None:
             query = select(User).where(User.username == username)
         elif user_id is not None:
@@ -39,7 +35,7 @@ class UserRepository:
         return user
 
 
-    async def get_all_users(self, filter_params: UserListRequest) -> list[User]:
+    async def get_all_users(self, filter_params: UserListRequest) -> tuple[list[User], dict]:
         """Get all users by filter"""
         query = (
             select(User)
@@ -115,15 +111,15 @@ class UserRepository:
             await self.db.commit()
             await self.db.refresh(user)
             return user
-        except OperationalError as e:
+        except OperationalError:
             await self.db.rollback()
             tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail="DB error occurred")
-        except SQLAlchemyError as e:
+            raise HTTPException(status_code=400, detail=tb_str)
+        except SQLAlchemyError:
             await self.db.rollback()
             tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail="DB error occurred")
-        except Exception as e:
+            raise HTTPException(status_code=400, detail=tb_str)
+        except Exception:
             await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)
@@ -134,10 +130,10 @@ class UserRepository:
             query = update(User).where(User.id == user_id).values(password=hashed_password)
             await self.db.execute(query)
             await self.db.commit()
-        except Exception as e:
+        except Exception:
             await self.db.rollback()
             tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail="DB error occurred")
+            raise HTTPException(status_code=400, detail=tb_str)
 
     async def delete_user(self, user_id:int) -> bool:
 
@@ -146,7 +142,7 @@ class UserRepository:
             await self.db.delete(user_to_delete)
             await self.db.commit()
             return True
-        except:
+        except SQLAlchemyError:
             await self.db.rollback()
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)
@@ -163,10 +159,10 @@ class UserRepository:
             await self.db.commit()
             await self.db.refresh(user)
             return user
-        except Exception as e:
+        except Exception:
             await self.db.rollback()
             tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail=f"Error disabling user: {str(e)}")
+            raise HTTPException(status_code=400, detail=tb_str)
 
     async def enable_user(self, user_id: int) -> User:
         
@@ -180,10 +176,10 @@ class UserRepository:
             await self.db.commit()
             await self.db.refresh(user)
             return user
-        except Exception as e:
+        except Exception:
             await self.db.rollback()
             tb_str = traceback.format_exc()
-            raise HTTPException(status_code=400, detail=f"Error enabling user: {str(e)}")
+            raise HTTPException(status_code=400, detail=tb_str)
         
 
     async def get_mails_by_role(self, role_name: str, department_id: int = None) -> list[str]:
@@ -198,6 +194,6 @@ class UserRepository:
             user_mails = result.unique().scalars().all()
         
             return user_mails
-        except Exception as e:
+        except Exception:
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)

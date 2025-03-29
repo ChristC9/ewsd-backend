@@ -1,9 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError
-
-import bcrypt
 import traceback
 
 from datetime import datetime, timezone
@@ -37,22 +34,22 @@ async def create_otp(db: AsyncSession, otp: OtpCreate) -> Otp:
         
         return otp
     
-    except Exception as e:
+    except Exception:
         await db.rollback()
         tb_str = traceback.format_exc()
-        raise HTTPException(status_code=400, detail="DB error occurred")
+        raise HTTPException(status_code=400, detail=tb_str)
     
 
-async def update_otp_by_model(db: AsyncSession, otpUpdate: OtpUpdate, otp_model: Otp) -> Otp:
+async def update_otp_by_model(db: AsyncSession, otp_update: OtpUpdate, otp_model: Otp) -> Otp:
     try:
-        otp_model.colisused = otpUpdate.is_used if otpUpdate.is_used else otp_model.colisused
-        otp_model.colexpiresat = otpUpdate.expires_at if otpUpdate.expires_at else otp_model.colexpiresat
-        otp_model.colotp = otpUpdate.otp if otpUpdate.otp else otp_model.colotp
+        otp_model.colisused = otp_update.is_used if otp_update.is_used else otp_model.colisused
+        otp_model.colexpiresat = otp_update.expires_at if otp_update.expires_at else otp_model.colexpiresat
+        otp_model.colotp = otp_update.otp if otp_update.otp else otp_model.colotp
         await db.commit()
 
-    except Exception as e:
+    except Exception:
         await db.rollback()
         tb_str = traceback.format_exc()
         print(tb_str)
-        raise HTTPException(status_code=400, detail="DB error occurred")
+        raise HTTPException(status_code=400, detail=tb_str)
         
