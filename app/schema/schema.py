@@ -12,8 +12,8 @@ class UserBase(BaseModel):
     username: str
     default_pwd: str
     password: str
-    is_disabled: bool = False
-    is_locked: bool = False
+    isdisabled: bool
+    islocked: bool
     lastlogin: Optional[datetime] = None
 
 
