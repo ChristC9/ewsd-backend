@@ -21,4 +21,4 @@ def send_email(to_emails: list[str], subject: str, text_content: str):
         print(response.body)
         print(response.headers)
     except Exception as e:
-        print(e.message)
+        print(e)
