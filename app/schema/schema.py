@@ -20,6 +20,15 @@ class UserBase(BaseModel):
     class Config:
         orm_mode = True
 
+class UserUpdate(BaseModel):
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    email: Optional[str] = None
+    isdisabled: Optional[bool] = None
+    islocked: Optional[bool] = None
+    role_id: Optional[int] = None
+    department_id: Optional[int] = None
+
 
 class UserListRequest(PaginationRequest):
     search: Optional[str] = None
