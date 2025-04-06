@@ -208,3 +208,16 @@ class IdeaDetailResponse(IdeaResponse):
 class UserListResponse(BaseModel):
     data: List[UserResponse]
     pagination: PaginationResponse
+
+
+
+class DepartmentUpdate(BaseModel):
+    name: Optional[str] = None
+    
+
+class DepartmentListRequest(PaginationRequest):
+    search: Optional[str] = None
+    
+class DepartmentListResponse(BaseModel):
+    data: List[DepartmentResponse]
+    pagination: PaginationResponse
