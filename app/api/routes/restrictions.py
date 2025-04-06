@@ -1,0 +1,27 @@
+from app.schema.restriction import RestrictionCreate, RestrictionResponse
+from app.repositories.restrictions import RestrictionRepository
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from app.api.deps import get_db, get_current_user
+from app.models.user_model import User
+
+router = APIRouter()
+
+@router.post("/", response_model=RestrictionResponse, status_code=status.HTTP_201_CREATED)
+async def create_restriction(
+    restriction_data: RestrictionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    restriction_repo = RestrictionRepository(db)
+    try:
+        new_restriction = await restriction_repo.create_restriction(
+            restriction_data, 
+            current_user
+        )
+        return new_restriction
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create restriction: {str(e)}"
+        )
