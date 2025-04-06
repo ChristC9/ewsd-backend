@@ -19,7 +19,6 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 class CommonBase(Base):
     __abstract__ = True
-    # id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
 
     @declared_attr
     def created_at(cls):
