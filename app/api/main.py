@@ -8,6 +8,7 @@ from app.api.routes import (
     comments,
     like,
     dashboard,
+    restrictions,
 )
 
 api_router = APIRouter()
@@ -20,3 +21,4 @@ api_router.include_router(categories.router, prefix="/categories", tags=["Catego
 api_router.include_router(departments.router, prefix="/departments", tags=["Departments Management"])
 api_router.include_router(comments.router, prefix="/comments", tags=["Comments Management"])
 api_router.include_router(like.router, prefix="/likes", tags=["Likes Management"])
+api_router.include_router(restrictions.router, prefix="/restrictions", tags=["Admin Restrictions Management"])

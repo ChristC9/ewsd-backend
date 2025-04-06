@@ -11,7 +11,8 @@ def get_access_token(user: User):
     access_token = create_token(
 
         data = {
-            "sub": user.username, 
+            "id": user.id,
+            "sub": user.username,
             "email": user.email,
             "role": user.role.name,
             "lastlogin": str(user.lastlogin) if user.lastlogin else None,
