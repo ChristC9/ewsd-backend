@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException,status,Depends, Query, BackgroundTasks
 from fastapi import UploadFile, File, Form
-from typing import List, Annotated
+from typing import List, Annotated, Optional
 from fastapi.responses import StreamingResponse
 import base64
 
@@ -261,9 +261,9 @@ async def update_idea(
     title: str = Form(...),
     description: str = Form(None),
     category_id: int = Form(...),
-    thumbnail: UploadFile = File(None),
+    thumbnail: Optional[UploadFile]= File(None),
     is_posted_anon: bool = Form(False),
-    files: List[UploadFile] = File(None),
+    files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db)
 ):
     # Check if the user has permission to update this idea
