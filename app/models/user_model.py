@@ -25,4 +25,6 @@ class User(CommonBase):
 
     role = relationship("Role", lazy="selectin")
     department = relationship("Department", lazy="selectin")
+    pages_accesses = relationship("PagesAccess", back_populates="user", lazy="joined")
+
 
