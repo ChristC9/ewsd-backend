@@ -213,7 +213,7 @@ class IdeaRepository:
         return ideas_ids
     
 
-    async def get_idea_by_id(self, idea_id: int)-> Idea:
+    async def get_idea_by_id(self, idea_id: int, user_id: int= None)-> Idea:
     
         likes_count = (
             select(Like.ideaid, func.count(Like.id).label('likes_count'))
@@ -267,8 +267,20 @@ class IdeaRepository:
             "comments_count": row[3],
             "department": row[4],
             "reports_count": len(row[0].reports),
-            # "comments": comments
+            "current_user_reaction": None
         }
+
+        if user_id:
+            user_like_query = (
+                select(Like)
+                .where(Like.ideaid == idea_id)
+                .where(Like.postedby == user_id)
+            )
+        user_like_result = await self.db.execute(user_like_query)
+        user_like = user_like_result.scalar_one_or_none()
+        
+        if user_like:
+            idea_details["current_user_reaction"] = "liked" if user_like.isliked else "disliked"
 
         return idea_details
 
