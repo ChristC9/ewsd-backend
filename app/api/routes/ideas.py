@@ -162,7 +162,7 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
         show_anoymous_users = False
     
     idea_repo = IdeaRepository(db)
-    item = await idea_repo.get_idea_by_id(idea_id)
+    item = await idea_repo.get_idea_by_id(idea_id,current_user.id)
     
     # Convert thumbnail to base64 if it exists
     thumbnail_b64 = None
@@ -245,7 +245,8 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
                 filetype = file.filetype
             ) for file in item["idea"].files]
             if item["idea"].files else [],
-            comments = comments_response
+            comments = comments_response,
+            current_user_reaction = item["current_user_reaction"]
         )
     
     # Update the views count
