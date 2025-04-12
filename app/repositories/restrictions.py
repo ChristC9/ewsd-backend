@@ -10,7 +10,7 @@ class RestrictionRepository:
 
     async def create_restriction(self, restriction_data: RestrictionCreate, current_user: User) -> Restriction:
         
-        if current_user.role.name != "admin":
+        if current_user.role.name != "admin".upper():
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin can create restrictions")
         
         restriction = Restriction(

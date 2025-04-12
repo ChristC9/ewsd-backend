@@ -43,6 +43,7 @@ class IdeaResponse(BaseModel):
     department: DepartmentBase
     category: CategoryBase
     comments: List[CommentResponse] = []
+    current_user_reaction: Optional[str] = None
 
     class Config:
         from_attributes = True
