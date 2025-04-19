@@ -20,7 +20,7 @@ from app.models.user_model import User
 from app.models.comment_model import Comment
 from app.utils.helpers import send_idea_submitted_email
 from sqlalchemy import select
-
+from typing import Annotated, Optional
 import csv
 from io import StringIO, BytesIO
 import zipfile
@@ -262,16 +262,17 @@ async def update_idea(
     title: str = Form(...),
     description: str = Form(None),
     category_id: int = Form(...),
-    thumbnail: UploadFile = File(None),
+    thumbnail: Optional[UploadFile] = File(None),  # Ensure it's marked as Optional
     is_posted_anon: bool = Form(False),
     files: List[UploadFile] = File(None),
+    update_thumbnail: bool = Form(False),  # Add a flag to indicate if thumbnail should be updated
     db: Session = Depends(get_db)
 ):
     # Check if the user has permission to update this idea
     # You might want to add permission checks here
-    
+
     idea_repo = IdeaRepository(db)
-    
+
     # Update the idea
     await idea_repo.update_idea(
         idea_id=idea_id,
@@ -280,21 +281,23 @@ async def update_idea(
         category_id=category_id,
         thumbnail=thumbnail,
         is_posted_anon=is_posted_anon,
-        files=files
+        files=files,
+        update_thumbnail=update_thumbnail  # Pass the flag
     )
-    
+
+    # Rest of the code remains the same
     # Get the updated idea details
     idea_details = await idea_repo.get_idea_by_id(idea_id)
-    
+
     # Format the response
     # Convert thumbnail to base64 if it exists
     thumbnail_b64 = None
     if idea_details["idea"].thumbnail:
         thumbnail_b64 = base64.b64encode(idea_details["idea"].thumbnail).decode('utf-8')
-    
+
     # Check if user is admin
     show_anonymous_users = current_user.role.name in ["ADMIN", "QA MANAGER"]
-    
+
     # Build the response object
     idea_response = IdeaResponse(
         id=idea_details["idea"].id,
@@ -330,15 +333,16 @@ async def update_idea(
             created_at=idea_details["idea"].category.created_at,
         )
     )
-    
+
     return idea_response
 
 
-@router.delete('/{idea_id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{idea_id}')
 # @has_permission(Permissions.DELETE_IDEA)
 async def delete_idea(idea_id: int,db: Session = Depends(get_db)):
     idea_repo = IdeaRepository(db)
-    return await idea_repo.delete_idea(int(idea_id))
+    await idea_repo.delete_idea(int(idea_id))
+    return {"message": f"Idea id {idea_id} is deleted successfully"}
 
 
 @router.get("/export/csv", status_code=status.HTTP_200_OK)

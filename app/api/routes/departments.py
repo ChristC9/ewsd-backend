@@ -15,3 +15,5 @@ async def create_department(department:DepartmentCreate, db: Session = Depends(g
     
     department_repo = DepartmentRepository(db)
     return await department_repo.create_department(department)
+
+
