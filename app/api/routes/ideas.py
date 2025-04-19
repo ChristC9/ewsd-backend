@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException,status,Depends, Query, BackgroundTasks
 from fastapi import UploadFile, File, Form
-from typing import List, Annotated
+from typing import List, Annotated, Optional
 from fastapi.responses import StreamingResponse
 import base64
 
@@ -77,9 +77,9 @@ async def create_idea(
         response_data["thumbnail"] = None
     
     user_repo = UserRepository(db)
+    new_idea_title = new_idea.title
     qa_mails = await user_repo.get_mails_by_role("QACOORDINATOR", current_user.department_id)
-    print(qa_mails)
-    send_idea_submitted_email(qa_mails, new_idea.title, username)
+    send_idea_submitted_email(qa_mails, new_idea_title, username)
     # Use BackgroundTasks to send email asynchronously
     # background_tasks: BackgroundTasks = BackgroundTasks()
     # background_tasks.add_task(
@@ -262,6 +262,7 @@ async def update_idea(
     title: str = Form(...),
     description: str = Form(None),
     category_id: int = Form(...),
+
     thumbnail: Optional[UploadFile] = File(None),  # Ensure it's marked as Optional
     is_posted_anon: bool = Form(False),
     files: List[UploadFile] = File(None),

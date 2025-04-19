@@ -18,7 +18,16 @@ class UserBase(BaseModel):
 
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class UserUpdate(BaseModel):
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    email: Optional[str] = None
+    isdisabled: Optional[bool] = None
+    islocked: Optional[bool] = None
+    role_id: Optional[int] = None
+    department_id: Optional[int] = None
 
 
 class UserListRequest(PaginationRequest):
@@ -207,4 +216,17 @@ class IdeaDetailResponse(IdeaResponse):
 
 class UserListResponse(BaseModel):
     data: List[UserResponse]
+    pagination: PaginationResponse
+
+
+
+class DepartmentUpdate(BaseModel):
+    name: Optional[str] = None
+    
+
+class DepartmentListRequest(PaginationRequest):
+    search: Optional[str] = None
+    
+class DepartmentListResponse(BaseModel):
+    data: List[DepartmentResponse]
     pagination: PaginationResponse

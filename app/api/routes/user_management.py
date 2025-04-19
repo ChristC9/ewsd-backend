@@ -6,7 +6,7 @@ from typing import Annotated
 from datetime import datetime, timezone, timedelta
 
 from app.api.deps import CurrentUser
-from app.schema.schema import UserCreate,Token, RefreshToken, UserResponse, UserListResponse, UserListRequest
+from app.schema.schema import UserCreate,Token, RefreshToken, UserResponse, UserListResponse, UserListRequest, UserUpdate
 from app.schema.security import ForgetPasswordInitiateRequest, ResetPasswordRequest, OtpCreate, OtpUpdate
 from app.repositories.users import UserRepository
 from app.repositories import (
@@ -133,7 +133,7 @@ async def refresh_token(
 
 @router.patch("/{user_id}", response_model=UserResponse)
 @has_permission(Permissions.UPDATE_USER)
-async def update_user(user_id: int, user_data: UserCreate, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+async def update_user(user_id: int, user_data: UserUpdate, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     user_repo = UserRepository(db)
     user = await user_repo.update_user(user_id, user_data)
     return user
