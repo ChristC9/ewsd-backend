@@ -45,8 +45,8 @@ async def create_idea(
     db: Session = Depends(get_db)
 ):
     username = f"{current_user.firstname} {current_user.lastname}"
-    user = await db.execute(select(User).where(User.id == posted_by))
-    user = user.scalar_one_or_none()
+    result = await db.execute(select(User).where(User.id == posted_by))
+    user = result.unique().scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail=f"User with ID {posted_by} not found")
     
