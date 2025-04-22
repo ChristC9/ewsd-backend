@@ -14,7 +14,7 @@ from app.repositories import dashboard
 from app.repositories.dashboard import DashboardRepository
 
 from app.schema.pagination import PaginationRequest
-from app.schema.analytical import UsersActivityResponse, MostUsedBrowsersResponse
+from app.schema.analytical import UsersActivityResponse, MostUsedBrowsersResponse, MostUsedPagesResponse
 
 
 router = APIRouter()
@@ -126,6 +126,34 @@ async def get_most_used_browsers(
     
     analytics_repo = DashboardRepository(db)
     result = await analytics_repo.get_most_used_browsers(
+        limit=limit,
+        start_date=start_datetime,
+        end_date=end_datetime
+    )
+    
+    return result
+
+
+@router.get("/most-active-pages", status_code=status.HTTP_200_OK, response_model=MostUsedPagesResponse)
+async def get_most_active_pages(
+    limit: int = Query(10, description="Number of pages to return", ge=1, le=100),
+    start_date: Optional[date] = Query(None, description="Filter by start date (YYYY-MM-DD)"),
+    end_date: Optional[date] = Query(None, description="Filter by end date (YYYY-MM-DD)"),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get the most commonly used pages"""
+    
+    # Convert date parameters to datetime if provided
+    start_datetime = None
+    end_datetime = None
+    
+    if start_date:
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+    if end_date:
+        end_datetime = datetime.combine(end_date, datetime.max.time())
+    
+    analytics_repo = DashboardRepository(db)
+    result = await analytics_repo.get_most_active_pages(
         limit=limit,
         start_date=start_datetime,
         end_date=end_datetime
