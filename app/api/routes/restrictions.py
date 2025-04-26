@@ -42,3 +42,25 @@ async def get_restriction(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve restriction: {str(e)}"
         )
+
+@router.put("/{restriction_id}", response_model=RestrictionResponse)
+async def update_restriction(
+    restriction_id: int,
+    restriction_data: RestrictionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    restriction_repo = RestrictionRepository(db)
+    try:
+        updated_restriction = await restriction_repo.update_restriction(
+            restriction_id, 
+            restriction_data
+        )
+        if not updated_restriction:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restriction not found")
+        return updated_restriction
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update restriction: {str(e)}"
+        )
