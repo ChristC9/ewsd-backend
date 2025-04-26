@@ -20,3 +20,13 @@ class BrowserUsage(BaseModel):
 class MostUsedBrowsersResponse(BaseModel):
     data: List[BrowserUsage]
     total_page_accesses: int
+
+
+class PageUsage(BaseModel):
+    page_name: str
+    access_count: int
+    access_percentage: float
+
+class MostUsedPagesResponse(BaseModel):
+    data: List[PageUsage]
+    total_page_accesses: int

@@ -245,3 +245,69 @@ class DashboardRepository:
         except Exception as e:
             print(f"Error getting most used browsers: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to retrieve browser usage data")
+    
+    
+    async def get_most_active_pages(self, 
+                                    limit: int = 10,
+                                    start_date: Optional[datetime] = None,
+                                    end_date: Optional[datetime] = None) -> Dict:
+        """
+        Get the most commonly used pages
+        """
+        try:# First get total page accesses for percentage calculation
+            total_query = select(func.count(PagesAccess.id))
+            
+            # Apply date filters if provided
+            if start_date:
+                total_query = total_query.where(PagesAccess.accessedon >= start_date)
+            if end_date:
+                total_query = total_query.where(PagesAccess.accessedon <= end_date)
+                
+            total_result = await self.db.execute(total_query)
+            total_accesses = total_result.scalar_one_or_none() or 0
+            
+            if total_accesses == 0:
+                return {"data": [], "total_page_accesses": 0}
+            
+            # Build query for page access counts
+            query = (
+                select(
+                    PagesAccess.pagename,
+                    func.count(PagesAccess.id).label("count")
+                )
+                .group_by(PagesAccess.pagename)
+                .order_by(desc("count"))
+                .limit(limit)
+            )
+            
+            # Apply the same date filters
+            if start_date:
+                query = query.where(PagesAccess.accessedon >= start_date)
+            if end_date:
+                query = query.where(PagesAccess.accessedon <= end_date)
+                
+            result = await self.db.execute(query)
+            pages = result.all()
+            
+            # Format the results with percentages
+            page_usage = []
+            for page in pages:
+                if not page.pagename:  # Skip empty browser names
+                    continue
+                    
+                usage_count = page.count
+                percentage = (usage_count / total_accesses) * 100
+                
+                page_usage.append({
+                    "page_name": page.pagename,
+                    "access_count": usage_count,
+                    "access_percentage": round(percentage, 2)
+                })
+                
+            return {
+                "data": page_usage,
+                "total_page_accesses": total_accesses
+            }
+        except Exception as e:
+            print(f"Error getting total page accesses: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to retrieve total page accesses")
