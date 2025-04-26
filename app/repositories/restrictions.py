@@ -2,6 +2,7 @@ from app.models.restriction_model import Restriction
 from app.models.user_model import User
 from app.schema.restriction import RestrictionCreate
 from fastapi import HTTPException, status
+from sqlalchemy import select
 class RestrictionRepository:
 
     def __init__(self, db):
@@ -27,3 +28,9 @@ class RestrictionRepository:
         except Exception as e:
             self.db.rollback()
             raise e
+    
+    async def get_restriction(self, restriction_id: int) -> Restriction:
+        restriction = await self.db.execute(
+            select(Restriction).where(Restriction.id == restriction_id)
+        )
+        return restriction.scalar_one_or_none()
