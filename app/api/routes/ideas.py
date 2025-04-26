@@ -45,8 +45,10 @@ async def create_idea(
     db: Session = Depends(get_db)
 ):
     username = f"{current_user.firstname} {current_user.lastname}"
-    result = await db.execute(select(User).where(User.id == posted_by))
-    user = result.unique().scalar_one_or_none()
+
+    user = await db.execute(select(User).where(User.id == posted_by))
+    user = user.unique().scalar_one_or_none()
+    
     if not user:
         raise HTTPException(status_code=404, detail=f"User with ID {posted_by} not found")
     
@@ -65,6 +67,9 @@ async def create_idea(
         "posted_by": new_idea.postedby,
         "posted_on": new_idea.postedon,
         "is_posted_anon": new_idea.ispostedanon,
+        "files": [
+            new_idea.files[i].filename if new_idea.files else None for i in range(len(new_idea.files))
+        ],
         "message": "Idea created successfully"
     }
     
@@ -80,14 +85,6 @@ async def create_idea(
     new_idea_title = new_idea.title
     qa_mails = await user_repo.get_mails_by_role("QACOORDINATOR", current_user.department_id)
     send_idea_submitted_email(qa_mails, new_idea_title, username)
-    # Use BackgroundTasks to send email asynchronously
-    # background_tasks: BackgroundTasks = BackgroundTasks()
-    # background_tasks.add_task(
-    #     send_idea_submitted_email, 
-    #     qa_mails, 
-    #     idea_title=new_idea.title, 
-    #     user_name=username
-    # )
     return response_data
 
 
@@ -142,7 +139,14 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
                 name = item["idea"].category.categoryname,
                 created_by= item["idea"].category.created_by,
                 created_at= item["idea"].category.created_at,
-            )
+            ),
+            files=[FileResponse(
+                id = file.id,
+                filename = file.filename,
+                filetype = file.filetype
+            ) for file in item["idea"].files]
+            if item["idea"].files else [],
+            current_user_reaction = item.get("current_user_reaction", None)
         )
         data.append(idea_response)
     
@@ -246,7 +250,7 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
             ) for file in item["idea"].files]
             if item["idea"].files else [],
             comments = comments_response,
-            current_user_reaction = item["current_user_reaction"]
+            current_user_reaction = item.get("current_user_reaction", None)
         )
     
     # Update the views count

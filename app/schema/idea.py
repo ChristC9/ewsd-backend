@@ -42,6 +42,7 @@ class IdeaResponse(BaseModel):
     posted_on: datetime
     department: DepartmentBase
     category: CategoryBase
+    files: List[FileResponse] = []
     comments: List[CommentResponse] = []
     current_user_reaction: Optional[str] = None
 
