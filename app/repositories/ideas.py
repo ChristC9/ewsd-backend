@@ -269,15 +269,15 @@ class IdeaRepository:
             "reports_count": len(row[0].reports),
             "current_user_reaction": None
         }
-
+        user_like = None
         if user_id:
             user_like_query = (
                 select(Like)
                 .where(Like.ideaid == idea_id)
                 .where(Like.postedby == user_id)
             )
-        user_like_result = await self.db.execute(user_like_query)
-        user_like = user_like_result.scalar_one_or_none()
+            user_like_result = await self.db.execute(user_like_query)
+            user_like = user_like_result.scalar_one_or_none()
         
         if user_like:
             idea_details["current_user_reaction"] = "liked" if user_like.isliked else "disliked"
@@ -355,7 +355,6 @@ class IdeaRepository:
         
         return {"message": f"Idea id {idea_id} is deleted successfully"}
 
-
     
     async def get_idea_reports(self, idea_id: int):
         query = (
@@ -369,10 +368,12 @@ class IdeaRepository:
 
 
     async def report_idea(self, report_create: idea_schema.IdeaReportCreate):
-
         idea = await self.get_idea_by_id(report_create.idea_id)
         if not idea:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea not found")
+
+        if idea['idea'].postedby == report_create.user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot report your own idea")
         report = Report(
             reportedby = report_create.user_id,
             ideaid = report_create.idea_id,

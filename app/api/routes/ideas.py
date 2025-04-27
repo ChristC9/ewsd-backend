@@ -85,6 +85,7 @@ async def create_idea(
     user_repo = UserRepository(db)
     new_idea_title = new_idea.title
     qa_mails = await user_repo.get_mails_by_role("QACOORDINATOR", department_id)
+    print("To emails: {qa_mails}")
     send_idea_submitted_email(qa_mails, new_idea_title, username)
     return response_data
 
