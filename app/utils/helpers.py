@@ -45,4 +45,19 @@ def compute_pagination(total: int, page: int, limit: int) -> PaginationResponse:
         next_page=next_page,
         prev_page=prev_page
     )
+
+def get_full_file_url(file_path: str, base_url: str = "https://ewsd-endpoint.onrender.com") -> str:
+    """Convert a relative file path to a full URL including domain"""
+    if not file_path:
+        return None
+    
+    # Check if file_path already includes the domain
+    if file_path.startswith(('http://', 'https://')):
+        return file_path
+        
+    # Ensure file_path doesn't start with a slash if we're going to add it
+    file_path = file_path.lstrip('/')
+    
+    # Combine to form complete URL
+    return f"{base_url}/{file_path}"
     
