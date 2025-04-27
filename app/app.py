@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 from app.api.main import api_router
 from app.config import settings
 from app.middleware.user_status import UserStatusMiddleware
@@ -37,3 +37,5 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_STR)
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

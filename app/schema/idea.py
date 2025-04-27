@@ -12,6 +12,7 @@ class FileResponse(BaseModel):
     id: int
     filename: str
     filetype: str
+    filelocation: str
 
     class Config:
         from_attributes = True
