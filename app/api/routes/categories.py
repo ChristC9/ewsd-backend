@@ -70,7 +70,7 @@ async def update_category(category_id: int, category_name: str, current_user: Cu
     db_category = await category_repo.update_category(category_id, category_name)
     category_response = CategoryBase(
         id = db_category.categoryid,
-        name = db_category.categoryid,
+        name = db_category.categoryname,
         created_by = db_category.created_by,
         created_at = db_category.created_at
     )

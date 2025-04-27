@@ -1,13 +1,18 @@
+from venv import logger
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.schema.comment import CommentCreate, CommentResponse
 from app.repositories.comment import CommentRepository
+from app.repositories.ideas import IdeaRepository
 from app.api.deps import get_db, get_current_user
 from app.models.user_model import User
 from app.models.comment_model import Comment
+from app.utils.helpers import send_comment_submitted_email
+
 
 from datetime import date
 
@@ -24,13 +29,14 @@ async def create_comment(
     current_user: User = Depends(get_current_user)
 ):
 
-   if current_user.isdisabled:
+    user_name = current_user.username
+    if current_user.isdisabled:
          raise HTTPException(
               status_code=status.HTTP_403_FORBIDDEN,
               detail="You are not allowed to create a comment"
          )
    
-   try:
+    try:
         db_comment = Comment(
             comment = comment_data.comment,
             postedby = current_user.id,
@@ -42,8 +48,17 @@ async def create_comment(
         db.add(db_comment)
         await db.commit()
         await db.refresh(db_comment)
+        
+        # get idea
+        idea_repo = IdeaRepository(db)
+        idea = await idea_repo.get_idea_by_id(comment_data.ideaid)
+        user_email = idea['idea'].user.email
+        send_comment_submitted_email(to_emails=[user_email], comment_text=comment_data.comment, user_name=user_name)
         return db_comment
-   except:
+    
+    except Exception as e:
+        # await db.rollback()
+        print("Comment Creation Error is " + str(e))
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to create comment"

@@ -47,7 +47,7 @@ class DashboardRepository:
         return ideas_count_by_dep
 
 
-    async def get_ideas_count_by_category(self) -> List:
+    async def get_ideas_count_by_category(self, department_id: int=None) -> List:
         stmt = (
             select(
                 Category.categoryname,
@@ -56,9 +56,13 @@ class DashboardRepository:
             .join(
                 Category, Idea.categoryid == Category.categoryid
             )
+            .join(
+                User, Idea.postedby == User.id
+            )
             .group_by(Category.categoryname)
         )
-        
+        if department_id:
+            stmt = stmt.where(User.department_id == department_id)
         result = await self.db.execute(stmt)
         ideas_count_by_cat = result.unique().all()
         
