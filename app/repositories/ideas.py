@@ -230,7 +230,6 @@ class IdeaRepository:
             .subquery()
         )
 
-        # Subquery to count comments for each idea
         comments_count = (
             select(Comment.ideaid, func.count(Comment.id).label('comments_count'))
             .group_by(Comment.ideaid)
@@ -251,7 +250,7 @@ class IdeaRepository:
             .join(User, Idea.postedby == User.id)
             .join(Department, User.department_id == Department.id)
             .where(Idea.isactived == True)
-            .where(User.isdisabled == False)  # Only return ideas from users who are not disabled
+            .where(User.isdisabled == False)
             .where(Idea.id == idea_id)
         )
 
@@ -276,11 +275,11 @@ class IdeaRepository:
                 .where(Like.ideaid == idea_id)
                 .where(Like.postedby == user_id)
             )
-        user_like_result = await self.db.execute(user_like_query)
-        user_like = user_like_result.scalar_one_or_none()
-        
-        if user_like:
-            idea_details["current_user_reaction"] = "liked" if user_like.isliked else "disliked"
+            user_like_result = await self.db.execute(user_like_query)
+            user_like = user_like_result.scalar_one_or_none()
+            
+            if user_like:
+                idea_details["current_user_reaction"] = "liked" if user_like.isliked else "disliked"
 
         return idea_details
 

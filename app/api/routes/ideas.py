@@ -19,6 +19,7 @@ from app.schema.schema import DepartmentBase
 from app.models.user_model import User
 from app.models.comment_model import Comment
 from app.utils.helpers import send_idea_submitted_email
+from app.utils.helpers import get_full_file_url
 from sqlalchemy import select
 from typing import Annotated, Optional
 import csv
@@ -143,7 +144,8 @@ async def get_all_ideas(query_params: Annotated[IdeasListRequest, Query()], curr
             files=[FileResponse(
                 id = file.id,
                 filename = file.filename,
-                filetype = file.filetype
+                filetype = file.filetype,
+                filelocation = get_full_file_url(file.filelocation)
             ) for file in item["idea"].files]
             if item["idea"].files else [],
             current_user_reaction = item.get("current_user_reaction", None)
@@ -246,7 +248,8 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
             files=[FileResponse(
                 id = file.id,
                 filename = file.filename,
-                filetype = file.filetype
+                filetype = file.filetype,
+                filelocation = get_full_file_url(file.filelocation)
             ) for file in item["idea"].files]
             if item["idea"].files else [],
             comments = comments_response,
@@ -290,12 +293,8 @@ async def update_idea(
         update_thumbnail=update_thumbnail  # Pass the flag
     )
 
-    # Rest of the code remains the same
-    # Get the updated idea details
     idea_details = await idea_repo.get_idea_by_id(idea_id)
-
-    # Format the response
-    # Convert thumbnail to base64 if it exists
+    
     thumbnail_b64 = None
     if idea_details["idea"].thumbnail:
         thumbnail_b64 = base64.b64encode(idea_details["idea"].thumbnail).decode('utf-8')
