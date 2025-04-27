@@ -19,7 +19,7 @@ from app.schema.schema import DepartmentBase
 from app.models.user_model import User
 from app.models.comment_model import Comment
 from app.utils.helpers import send_idea_submitted_email
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from typing import Annotated, Optional
 import csv
 from io import StringIO, BytesIO
@@ -45,6 +45,7 @@ async def create_idea(
     db: Session = Depends(get_db)
 ):
     username = f"{current_user.firstname} {current_user.lastname}"
+    department_id = current_user.department_id
 
     user = await db.execute(select(User).where(User.id == posted_by))
     user = user.unique().scalar_one_or_none()
@@ -83,7 +84,7 @@ async def create_idea(
     
     user_repo = UserRepository(db)
     new_idea_title = new_idea.title
-    qa_mails = await user_repo.get_mails_by_role("QACOORDINATOR", current_user.department_id)
+    qa_mails = await user_repo.get_mails_by_role("QACOORDINATOR", department_id)
     send_idea_submitted_email(qa_mails, new_idea_title, username)
     return response_data
 
@@ -176,9 +177,9 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
     # Get comments for this idea
     comments_query = (
         select(Comment)
-        .where(Comment.ideaid == idea_id)
-        .order_by(Comment.postedon.desc())  # Most recent comments first
-    )
+        .where(and_(Comment.ideaid == idea_id))
+        .order_by(Comment.postedon.desc())
+    )  # Most recent comments first
     comments_result = await db.execute(comments_query)
     comments = comments_result.scalars().all()
     
@@ -188,8 +189,9 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
         # Get the user who posted the comment
         user_query = select(User).where(User.id == comment.postedby)
         user_result = await db.execute(user_query)
-        user = user_result.scalar_one_or_none()
-        
+        user = user_result.unique().scalar_one_or_none()
+        if user.isdisabled or user.islocked:
+            continue
         # Determine username based on anonymity settings
         username = None
         if user and (not comment.ispostedanon or show_anoymous_users):
