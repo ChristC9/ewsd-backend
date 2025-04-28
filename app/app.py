@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.main import api_router
 from app.config import settings
 from app.middleware.user_status import UserStatusMiddleware
+import os
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -38,4 +39,7 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_STR)
 
+# Check if uploads directory exists, if not create it
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
