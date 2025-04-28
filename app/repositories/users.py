@@ -49,6 +49,8 @@ class UserRepository:
             )
         if filter_params.department_id:
             query = query.where(User.department_id == filter_params.department_id)
+        if filter_params.role_id:
+            query = query.where(User.role_id == filter_params.role_id)
         
         offset = (filter_params.page - 1) * filter_params.limit
         query = query.offset(offset).limit(filter_params.limit)
@@ -68,6 +70,9 @@ class UserRepository:
             )
         if filter_params.department_id:
             total_query = total_query.where(User.department_id == filter_params.department_id)
+        
+        if filter_params.role_id:
+            total_query = total_query.where(User.role_id == filter_params.role_id)
         
         total_result = await self.db.execute(total_query)
         total = total_result.unique().scalar_one_or_none()
