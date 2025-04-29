@@ -28,6 +28,8 @@ class IdeasListRequest(PaginationRequest):
     filter_my: Optional[bool] = Field(None, alias="filter[my]")
     filter_reported: Optional[bool] = Field(None, alias="filter[reported]")
     filter_department: Optional[List[int]] = Field(None, alias="filter[department]")
+    filter_anonymous: Optional[bool] = Field(None, alias="filter[anonymous]")
+    filter_no_comment: Optional[bool] = Field(None, alias="filter[no_comment]")
 
 class IdeaResponse(BaseModel):
     id: int

@@ -1,6 +1,6 @@
 from calendar import c
 import select
-from typing import List
+from typing import List, Any
 from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, or_, select, func, delete
@@ -15,7 +15,7 @@ from app.models.department_model import Department
 from app.models.user_model import User
 from app.models.like_model import Like
 from app.models.report_model import Report
-from app.schema import idea as idea_schema
+from app.schema import comment, idea as idea_schema
 from app.schema.idea import IdeasListRequest
 from app.utils.helpers import compute_pagination
 from fastapi import HTTPException,status
@@ -143,7 +143,7 @@ class IdeaRepository:
             .where(User.isdisabled == False)
         )
 
-    def _apply_filters(self, query, user_id: int, filter_params: IdeasListRequest):
+    def _apply_filters(self, query, user_id: int, filter_params: IdeasListRequest, comments_count: Any):
         if filter_params.filter_category:
             query = query.where(Idea.categoryid.in_(filter_params.filter_category))
         if filter_params.search:
@@ -157,12 +157,16 @@ class IdeaRepository:
             query = query.where(Department.id.in_(filter_params.filter_department))
         if filter_params.filter_reported:
             query = query.where(Idea.isreported == True)
+        if filter_params.filter_anonymous:
+            query = query.where(Idea.ispostedanon == True)
+        if filter_params.filter_no_comment:
+           query = query.where(comments_count.c.comments_count.is_(None))
         return query
 
     async def get_all_ideas(self, user_id: int, filter_params: IdeasListRequest):
         likes_count, dislikes_count, comments_count = self._build_count_subqueries()
         query = self._build_base_query(likes_count, dislikes_count, comments_count)
-        query = self._apply_filters(query, user_id, filter_params)
+        query = self._apply_filters(query, user_id, filter_params, comments_count)
 
         # Apply sorting
         sort_params = [
@@ -194,7 +198,7 @@ class IdeaRepository:
 
         # Get total count
         total_query = select(func.count(Idea.id)).join(User, Idea.postedby == User.id).join(Department, User.department_id == Department.id)
-        total_query = self._apply_filters(total_query, user_id, filter_params)
+        total_query = self._apply_filters(total_query, user_id, filter_params, comments_count)
         total = await self.db.execute(total_query)
         total = total.scalar_one()
 

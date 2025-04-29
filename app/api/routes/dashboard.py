@@ -75,6 +75,19 @@ async def get_anon_stats(
     return result
 
 
+@router.get("/stats", status_code=status.HTTP_200_OK)
+async def get_stats(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get the count of anonymous ideas, comments and no comments ideas
+    """
+    dashboard_repo = DashboardRepository(db)
+    result = await dashboard_repo.get_stats()
+    return result
+
+
 @router.get("/most-active-users", response_model=UsersActivityResponse)
 async def get_most_active_users(
     page: int = Query(1, description="Page number", ge=1),

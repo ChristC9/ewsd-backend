@@ -118,6 +118,50 @@ class DashboardRepository:
             "commentsCount": anon_comment_count
         }
     
+    
+    async def get_stats(self):
+        """
+        Get the count of ideas posted by anonymous users
+        Get the count of comments posted by anonymous users
+        Get the count of no comments posts
+        """
+        anon_idea_query = (
+            select(
+                func.count(Idea.id)
+            )
+            .where(Idea.ispostedanon == True)
+        )
+        result = await self.db.execute(anon_idea_query)
+        anon_idea_count = result.unique().scalar_one_or_none()
+
+        anon_comment_count_query = (
+            select(
+                func.count(Comment.id)
+            )
+            .where(Comment.ispostedanon == True)
+        )
+        result = await self.db.execute(anon_comment_count_query)
+        anon_comment_count = result.unique().scalar_one_or_none()
+
+
+        no_comment_idea_query = (
+
+            select(
+                func.count(Idea.id)
+            )
+            .join(Comment, Idea.id == Comment.ideaid)
+            .where(Comment.ispostedanon == True)
+            .where(Comment.ideaid == Idea.id)
+        )
+        result = await self.db.execute(no_comment_idea_query)
+        no_comment_count = result.unique().scalar_one_or_none()
+        
+        return {
+            "anonIdeasCount": anon_idea_count,
+            "anonCommentsCount": anon_comment_count,
+            "noCommentIdeaCount": no_comment_count
+        }
+    
 
     async def get_most_active_users(self, 
                                     params: PaginationRequest, 
