@@ -194,7 +194,7 @@ async def get_idea_by_id(idea_id: int, current_user: CurrentUser, db: Session = 
         user_query = select(User).where(User.id == comment.postedby)
         user_result = await db.execute(user_query)
         user = user_result.unique().scalar_one_or_none()
-        if user.isdisabled or user.islocked:
+        if user.ishidden:
             continue
         # Determine username based on anonymity settings
         username = None

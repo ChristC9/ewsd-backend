@@ -27,10 +27,14 @@ def send_otp_email(to_email: str, otp_code: str):
 
 
 def send_idea_submitted_email(to_emails, idea_title: str, user_name: str):
-    send_email(to_emails, "Idea Submitted", f"<strong>{user_name}</strong> sumbitted an idea with title: <strong>{idea_title}</strong>")
+    send_email(
+        to_emails, 
+        "New Idea Submitted in Your Department",
+        f"Dear <strong>{user_name}</strong>,<br><br>A new idea, <strong>{idea_title}</strong>, is submitted by a staff member in your department.<br>You can review it by logging into the system.<br><br>Best regards,<br>The Idea Submission System"
+    )
 
 def send_comment_submitted_email(to_emails, comment_text: str, user_name: str):
-    send_email(to_emails, "Comment Submitted", f"<strong>{user_name}</strong> sumbitted a comment: <strong>{comment_text}</strong>")
+    send_email(to_emails, "New Comment on Your Submitted Idea", f"Dear <strong>{user_name}</strong>,<br><br>Someone has commented on your submitted idea.<br>You can review it by logging into a system.<br><br>Best regards,<br>The Idea Submission System")
 
 def compute_pagination(total: int, page: int, limit: int) -> PaginationResponse:
     total_pages = (total + limit - 1) // limit
