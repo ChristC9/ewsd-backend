@@ -85,7 +85,7 @@ class UserRepository:
             db_user = User(
                 firstname=user.firstname,
                 lastname=user.lastname,
-                username=self.remove_spaces(user.username),
+                username= self.remove_spaces(user.username) if " " in user.username else user.username,
                 default_pwd = default_hashed_password,
                 password=hashed_password,
                 email= user.email if user.email else None,
