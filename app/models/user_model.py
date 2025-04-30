@@ -17,6 +17,7 @@ class User(CommonBase):
     default_pwd = Column(String(255))
     password = Column(String(255))
     isdisabled = Column(Boolean, default=False)
+    ishidden = Column(Boolean, default=False)
     islocked = Column(Boolean, default=False)
     lastlogin = Column(DateTime(timezone=True),nullable=True)
     role_id = Column(Integer, ForeignKey('roles.id'))

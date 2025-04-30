@@ -221,3 +221,19 @@ async def enable_user(user_id: int, current_user: CurrentUser, db: AsyncSession 
     user_repo = UserRepository(db)
     user = await user_repo.enable_user(user_id)
     return user
+
+
+@router.patch("/{user_id}/hide", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def hide_ideas_and_comments(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    
+    user_repo = UserRepository(db)
+    user = await user_repo.hide_ideas_and_comments(user_id)
+    return user
+
+@router.patch("/{user_id}/unhide", response_model=UserResponse)
+@has_permission(Permissions.UPDATE_USER)
+async def unhide_ideas_and_comments(user_id: int, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    user_repo = UserRepository(db)
+    user = await user_repo.unhide_ideas_and_comments(user_id)
+    return user

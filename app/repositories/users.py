@@ -204,3 +204,37 @@ class UserRepository:
         except Exception:
             tb_str = traceback.format_exc()
             raise HTTPException(status_code=400, detail=tb_str)
+    
+
+    async def hide_ideas_and_comments(self, user_id: int) -> User:
+        try:
+            user = await self.get_user(user_id=user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+                
+            user.ishidden = True
+            user.updated_at = datetime.now(timezone.utc)
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        except Exception:
+            await self.db.rollback()
+            tb_str = traceback.format_exc()
+            raise HTTPException(status_code=400, detail=tb_str)
+        
+    
+    async def unhide_ideas_and_comments(self, user_id: int) -> User:
+        try:
+            user = await self.get_user(user_id=user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+                
+            user.ishidden = False
+            user.updated_at = datetime.now(timezone.utc)
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        except Exception:
+            await self.db.rollback()
+            tb_str = traceback.format_exc()
+            raise HTTPException(status_code=400, detail=tb_str)

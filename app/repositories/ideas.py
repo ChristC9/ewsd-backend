@@ -140,7 +140,7 @@ class IdeaRepository:
             .join(User, Idea.postedby == User.id)
             .join(Department, User.department_id == Department.id)
             .where(Idea.isactived == True)
-            .where(User.isdisabled == False)
+            .where(User.ishidden == False)
         )
 
     def _apply_filters(self, query, user_id: int, filter_params: IdeasListRequest, comments_count: Any):
@@ -254,7 +254,7 @@ class IdeaRepository:
             .join(User, Idea.postedby == User.id)
             .join(Department, User.department_id == Department.id)
             .where(Idea.isactived == True)
-            .where(User.isdisabled == False)
+            .where(User.ishidden == False)
             .where(Idea.id == idea_id)
         )
 
