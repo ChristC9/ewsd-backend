@@ -18,6 +18,8 @@ class UserRepository:
     def __init__(self,db: AsyncSession):
         self.db = db
 
+    def remove_spaces(self, string: str) -> str:
+        return string.replace(" ", "")
 
     async def get_user(self,username: str = None, user_id: int = None, email: str = None) -> User:
 
@@ -88,7 +90,7 @@ class UserRepository:
             db_user = User(
                 firstname=user.firstname,
                 lastname=user.lastname,
-                username=user.username,
+                username= self.remove_spaces(user.username) if " " in user.username else user.username,
                 default_pwd = default_hashed_password,
                 password=hashed_password,
                 email= user.email if user.email else None,
