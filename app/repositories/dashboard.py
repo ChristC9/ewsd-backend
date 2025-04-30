@@ -26,7 +26,7 @@ class DashboardRepository:
         self.db = db
 
 
-    async def get_ideas_count_by_department(self) -> List:
+    async def get_ideas_count_by_department(self, department_id: int = None) -> List:
         stmt = (
             select(
                 Department.name,
@@ -40,6 +40,9 @@ class DashboardRepository:
             )
             .group_by(Department.name)
         )
+
+        if department_id:
+            stmt = stmt.where(Department.id == department_id)
         
         result = await self.db.execute(stmt)
         ideas_count_by_dep = result.unique().all()
