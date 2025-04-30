@@ -22,10 +22,11 @@ router = APIRouter()
 @router.get("/ideas-by-department", status_code=status.HTTP_200_OK)
 async def get_ideas_by_department(
     current_user: CurrentUser,
+    department_id: Optional[int] = Query(None, description="Filter by department ID"),
     db: AsyncSession = Depends(get_db),
 ):
     dashboard_repo = DashboardRepository(db)
-    result = await dashboard_repo.get_ideas_count_by_department()
+    result = await dashboard_repo.get_ideas_count_by_department(department_id=department_id)
     return {
         'labels': [r[0] for r in result],
         'data': [r[1] for r in result]
