@@ -97,12 +97,13 @@ class DepartmentResponse(BaseModel):
         from_attributes = True
         
 class UserResponse(UserBase):
-
+    ishidden: bool
     id: int
     role: RoleResponse
     department: DepartmentResponse
     created_at: datetime
     updated_at: datetime
+
     password: str = Field(exclude=True)
     default_pwd: str = Field(exclude=True)
 
