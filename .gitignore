@@ -81,5 +81,6 @@ alembic.ini
 alembic/
 alembic-dev/
 alembic-local/
+alembic-prod/
 
 uploads/
