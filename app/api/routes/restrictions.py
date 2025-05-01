@@ -25,6 +25,20 @@ async def create_restriction(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create restriction: {str(e)}"
         )
+@router.get("/", response_model=list[RestrictionResponse])
+async def get_all_restrictions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    restriction_repo = RestrictionRepository(db)
+    try:
+        restrictions = await restriction_repo.get_all_restrictions()
+        return restrictions
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve restrictions: {str(e)}"
+        )
 @router.get("/{restriction_id}", response_model=RestrictionResponse)
 async def get_restriction(
     restriction_id: int,
