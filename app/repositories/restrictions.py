@@ -29,6 +29,12 @@ class RestrictionRepository:
             self.db.rollback()
             raise e
     
+    async def get_all_restrictions(self) -> list[Restriction]:
+        restrictions = await self.db.execute(
+            select(Restriction)
+        )
+        return restrictions.scalars().all()
+    
     async def get_restriction(self, restriction_id: int) -> Restriction:
         restriction = await self.db.execute(
             select(Restriction).where(Restriction.id == restriction_id)
