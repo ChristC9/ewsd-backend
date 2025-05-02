@@ -6,7 +6,6 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 
-
 def send_email(to_emails: list[str], subject: str, text_content: str):
     message = Mail(
         from_email='squantumuniversity@gmail.com',
@@ -22,3 +21,4 @@ def send_email(to_emails: list[str], subject: str, text_content: str):
         print(response.headers)
     except Exception as e:
         print(e)
+
