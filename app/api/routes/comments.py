@@ -29,7 +29,7 @@ async def create_comment(
     current_user: User = Depends(get_current_user)
 ):
 
-    user_name = current_user.username
+    # user_name = current_user.username
     if current_user.isdisabled:
          raise HTTPException(
               status_code=status.HTTP_403_FORBIDDEN,
@@ -53,6 +53,7 @@ async def create_comment(
         idea_repo = IdeaRepository(db)
         idea = await idea_repo.get_idea_by_id(comment_data.ideaid)
         user_email = idea['idea'].user.email
+        user_name = idea['idea'].user.username
         send_comment_submitted_email(to_emails=[user_email], comment_text=comment_data.comment, user_name=user_name)
         return db_comment
     

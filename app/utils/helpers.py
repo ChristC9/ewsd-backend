@@ -30,7 +30,7 @@ def send_idea_submitted_email(to_emails, idea_title: str, user_name: str):
     send_email(
         to_emails, 
         "New Idea Submitted in Your Department",
-        f"Dear <strong>{user_name}</strong>,<br><br>A new idea, <strong>{idea_title}</strong>, is submitted by a staff member in your department.<br>You can review it by logging into the system.<br><br>Best regards,<br>The Idea Submission System"
+        f"Dear <strong>QA Coordinator</strong>,<br><br>A new idea, <strong>{idea_title}</strong>, is submitted by a staff member in your department.<br>You can review it by logging into the system.<br><br>Best regards,<br>The Idea Submission System"
     )
 
 def send_comment_submitted_email(to_emails, comment_text: str, user_name: str):
