@@ -156,7 +156,7 @@ class IdeaRepository:
         if filter_params.filter_department:
             query = query.where(Department.id.in_(filter_params.filter_department))
         if filter_params.filter_reported:
-            query = query.where(Idea.isreported == True)
+            query = query.where(Idea.reports)
         if filter_params.filter_anonymous:
             query = query.where(Idea.ispostedanon == True)
         if filter_params.filter_no_comment:
