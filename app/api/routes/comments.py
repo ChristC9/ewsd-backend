@@ -53,7 +53,7 @@ async def create_comment(
         idea_repo = IdeaRepository(db)
         idea = await idea_repo.get_idea_by_id(comment_data.ideaid)
         user_email = idea['idea'].user.email
-        user_name = idea['idea'].user.username
+        user_name = idea['idea'].user.firstname + " " + idea['idea'].user.lastname
         send_comment_submitted_email(to_emails=[user_email], comment_text=comment_data.comment, user_name=user_name)
         return db_comment
     
