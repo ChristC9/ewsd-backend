@@ -50,7 +50,7 @@ def compute_pagination(total: int, page: int, limit: int) -> PaginationResponse:
         prev_page=prev_page
     )
 
-def get_full_file_url(file_path: str, base_url: str = "https://ewsd-endpoint.onrender.com") -> str:
+def get_full_file_url(file_path: str, base_url: str = "https://ewsd-backend-1.onrender.com") -> str:
     """Convert a relative file path to a full URL including domain"""
     if not file_path:
         return None
